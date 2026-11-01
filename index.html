@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do LLM Agents Still Need to Be Told How to Self-Improve?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;600;800&display=swap');
+        
+        :root { --brand-blue: #3b82f6; --brand-purple: #8b5cf6; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; color: #1f2937; }
+        .serif { font-family: 'Source Serif 4', serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, var(--brand-blue), var(--brand-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .prose p { margin-bottom: 0.75rem; line-height: 1.5; font-size: 1.15rem; }
+        p.serif { margin-bottom: 0.75rem; line-height: 1.5; }
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3), transparent);
+            margin: 3rem 0;
+            border: none;
+        }
+        details {
+            margin: 2rem 0;
+        }
+        details summary {
+            cursor: pointer;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border-left: 4px solid var(--brand-blue);
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: var(--brand-blue);
+            list-style: none;
+            transition: all 0.2s ease;
+        }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        details summary::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 0.5rem;
+            transition: transform 0.2s ease;
+        }
+        details[open] summary::before {
+            transform: rotate(90deg);
+        }
+        details summary:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+        }
+        details .details-content {
+            padding: 1.5rem;
+            margin-top: 0.5rem;
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--brand-purple);
+        }
+    </style>
+</head>
+<body class="bg-white antialiased">
+
+    <div class="fixed top-0 left-0 w-full h-1 bg-gray-100 z-50">
+        <div class="h-full bg-blue-600 w-0" id="progress-bar"></div>
+    </div>
+
+    <header class="max-w-5xl mx-auto px-6 pt-10 pb-16 text-center">
+        <div class="flex items-center justify-center gap-3 text-sm font-semibold text-blue-600 mb-6 uppercase tracking-wider">
+            <!-- TODO: update date -->
+            <span>November 1, 2026</span>
+        </div>
+
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 leading-tight text-center">
+            Do LLM Agents Still Need to Be<br>
+            Told How to Self-Improve?
+        </h1>
+        <!-- TODO: add venue once known
+        <div class="flex justify-center mt-8 mb-10">
+            <span class="text-3xl font-semibold text-indigo-700 rounded-lg px-5 py-2 tracking-wide">VENUE</span>
+        </div> -->
+
+        <div class="flex items-center justify-center gap-4 py-6 border-y border-gray-100 mt-8">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 text-center">
+                <div>
+                    <p class="font-bold text-lg">Shobhita Sundaram</p>
+                    <p class="text-gray-500">MIT</p>
+                </div>
+                <div>
+                    <p class="font-bold text-lg">Cansu Sancaktar</p>
+                    <p class="text-gray-500">University of Tübingen</p>
+                </div>
+                <div>
+                    <p class="font-bold text-lg">Phillip Isola</p>
+                    <p class="text-gray-500">MIT</p>
+                </div>
+            </div>
+                </div>
+
+        <div class="flex justify-center mt-8">
+            <!-- TODO: arXiv link -->
+            <a href="#" target="_blank" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.586 5L14 2.414A2 2 0 0012.586 2H9z" />
+                    <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                </svg>
+                Paper
+            </a>
+        </div>
+    </header>
+
+    <figure class="max-w-5xl mx-auto px-4 mb-6">
+        <div class="p-3 md:p-5">
+            <img src="figs/teaser8.png" alt="A teacher agent organizes its own learning procedure" class="w-1/1 mx-auto h-auto rounded-lg">
+        </div>
+    </figure>
+
+
+    <aside class="max-w-4xl mx-auto px-6 mb-16">
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-8 rounded-r-xl mb-6">
+            <h3 class="font-bold uppercase text-sm tracking-widest text-blue-700 mb-3">TLDR</h3>
+            <p class="text-base text-blue-900 leading-relaxed">
+                We give a frozen LLM agent a goal, a compute budget, and primitive tools for generating games and editing text, but no prescribed self-improvement loop or real-world data.
+                Sufficiently capable models construct their own learning procedure, follow recognizable learning strategies, and learn text that transfers to held-out benchmarks.
+            </p>
+        </div>
+
+        <details>
+            <summary>Abstract</summary>
+            <div class="details-content">
+                <p class="text-base text-gray-700 leading-relaxed">
+                    LLM agents increasingly drive their own learning. Self-improvement methods delegate various components of model optimization to the models themselves.
+                    As models become more capable, this motivates a basic question: do these increasingly capable models still need us to specify how they should self-improve?
+                    In this paper we study an autonomous paradigm in which, given basic primitives, resources, and a general goal for self-improvement, agents construct their own self-learning algorithm.
+                    Using the setting of gameplay as a testbed, a frozen LLM agent is given a compute budget and tools for collecting experience and updating text documents, and allowed to freely experiment without an externally imposed loop or access to real-world data. We find that sufficiently capable models
+                    do self-improve under these conditions, demonstrating strategies that align with classic cognitive frameworks for self-regulated learning and constructs from machine learning literature on self-generated curricula. Furthermore, we study the extent to which the learned text artifacts transfer to external benchmarks, observing improvement across different game horizons, mechanics, and 3D navigation tasks.
+                </p>
+            </div>
+        </details>
+    </aside>
+
+
+
+    <article class="max-w-4xl mx-auto px-6 prose mb-20 text-lg">
+        <h2 class="text-3xl font-bold mb-6">Who Specifies the Self-Improvement Loop?</h2>
+        <p class="serif">
+            As LLM agents become more capable, we increasingly delegate parts of the machine learning process to the learners themselves.
+            Models generate their own supervised data, construct interactive environments, and even rewrite their own tools and harnesses.
+            Asymmetric self-play is a particularly compelling example, in which models learn by simultaneously generating and solving tasks.
+        </p>
+
+        <p class="serif">
+            But these methods still prescribe <em>the loop</em> that ties these pieces together: how tasks are sampled, how their learning value is evaluated, and how the learner is updated.
+            In parallel with efforts to develop better methods, there are also growing concerns about the need for safeguards against misaligned self-improvement.
+        </p>
+
+        <p class="serif">
+            Both directions motivate a basic question: <strong>do capable models still need us to specify how they should self-improve?</strong>
+        </p>
+
+        <p class="serif">In our new paper, we study the natural behavior of an LLM agent when it is given the primitive tools and resources for self-improvement,
+            but is <em>not</em> wrapped in an explicit self-improvement algorithm. We find that <strong>sufficiently capable models successfully self-organize learning procedures and self-improve on held-out tasks</strong> -- without access to real-world tasks or validation scores!</p>
+
+        <p class="serif">
+            Our setting matters for both:
+        </p>
+
+        <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
+            <li class="pl-2"><strong>Capabilities:</strong> Models may no longer require prescribed self-optimization algorithms.</li>
+            <li class="pl-2"><strong>Safety:</strong> The absence of a specified loop does not necessarily prevent self-improvement.</li>
+        </ul>
+
+        <hr class="section-divider">
+
+        <h2 class="text-3xl font-bold mb-6 pt-8">A Controlled Self-Improvement Setting</h2>
+
+        <h3 class="text-2xl font-bold mb-6 pt-8">Gameplay with Limited Information</h3>
+        <p class="serif">
+            We study self-improvement in the setting of <strong>gameplay with undisclosed mechanics</strong>. A <em>player</em> agent plays a turn-based game with limited knowledge of the rules and objectives,
+            and must succeed within a turn and token budget.
+            This requires diverse reasoning skills: efficient exploration, information acquisition, multi-step planning, and world modeling.
+        </p>
+
+        <h3 class="text-2xl font-bold mb-6 pt-8">Teacher and Player</h3>
+        <p class="serif">
+            An instance of that same model serves as the <em>teacher</em>. The teacher is a frozen model in a persistent, sandboxed harness session (Claude Code, Pi), and is given:
+        </p>
+
+        <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
+            <li class="pl-2"><strong>A goal:</strong> Improve the player's performance on unseen single-player games by writing text artifacts (e.g., editing the prompt, creating skill files), such that those artifacts are useful for games with different tasks or mechanics.</li>
+            <li class="pl-2"><strong>Tools:</strong> Read/Write for sandbox files, Bash, and a <strong>Gameplay</strong> tool. The teacher calls the Gameplay tool with a game source file and, optionally, a directory of player text artifacts. The game is executed in a fresh player session, and the teacher gets back the score and transcript.</li>
+            <li class="pl-2"><strong>A budget:</strong> An <em>update budget</em> (number of edits to the player context) and a <em>gameplay budget</em> (number of gameplays the teacher may observe).</li>
+        </ul>
+
+        <p class="serif">
+            Importantly, <strong>we do not instruct the teacher when or how to use these tools</strong>. The teacher has no external games to train on -- if it wants practice games, it has to write them itself.
+            In our main experiments games are written in <em>PuzzleScript</em>, a domain-specific language for 2D grid-based puzzle games, and the Gameplay tool rejects games that do not compile or where the win state is verifiably unreachable.
+        </p>
+
+        <details>
+            <summary>Formal Setup</summary>
+            <div class="details-content serif">
+                <p class="serif">Let \(\pi\) be an LLM with frozen weights \(\theta\). The <strong>player</strong> \(\pi_{player}\) has context \(c = (c_P, c_L)\), where \(c_P\) is the player prompt and \(c_L\) is auxiliary text files (e.g., skill files).
+                    The <strong>teacher</strong> \(\pi_{teacher}\) is another instance of the same LLM that modifies \(c\). An <em>update</em> is a single edit tool-call to one file in \(c\).</p>
+
+                <p class="serif">The teacher's "algorithm" is just to act in its sandbox until the budget runs out:</p>
+
+                <div class="my-6">
+                    \[
+                    \begin{align}
+                    & S \gets \text{InitSandbox}(c_0, I, B), \quad \mathcal{A}_T = \{\text{Read}, \text{Write}, \text{Bash}, \text{Gameplay}\} \nonumber \\
+                    & \textbf{while } B > 0: \quad a \sim \pi_{teacher}(\cdot \mid S), \;\; a \in \mathcal{A}_T; \quad S \gets \text{Execute}(S, a) \nonumber \\
+                    & \textbf{return } c_{final} \nonumber
+                    \end{align}
+                    \]
+                </div>
+
+                <p class="serif">We evaluate a context \(c\) by the player's performance on a held-out test set of games, where each game is played in a fresh player session at a fixed horizon and token budget:</p>
+
+                <div class="my-6">
+                    \[
+                    J(c) = \frac{1}{|\mathcal{D}_{test}|} \sum_{g \in \mathcal{D}_{test}} \mathbb{E}_{\pi_{player}(\cdot \mid h_t, c)} \left[ \sum_{t=1}^{T} r_t \right]
+                    \]
+                </div>
+
+                <p class="serif">and measure self-improvement as \(J(c_{final}) - J(c_0) > 0\).</p>
+            </div>
+        </details>
+
+        <p class="serif">
+            This setting has notable similarities to asymmetric self-play, in which a teacher generates tasks for a student to solve.
+            The difference is that we do not mandate how the teacher uses its budget and tools, and we optimize in <em>text-space</em> rather than weight-space.
+            <strong>The teacher's role extends beyond task generation to constructing the learning procedure itself.</strong>
+            Since updates are in text, we also get a readable record of changes in player behavior.
+        </p>
+
+        <h3 class="text-2xl font-bold mb-6 pt-8">Measuring Self-Improvement through Generalization</h3>
+        <p class="serif">
+            We assess whether an agent has structured its learning well via transfer to held-out benchmarks, ordered by increasing distance from the self-learning setting:
+        </p>
+
+        <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
+            <li class="pl-2"><strong>PuzzleScript-t20:</strong> Short-horizon, human-authored PuzzleScript levels with a 20-turn horizon; this shares constraints with the main self-learning setting.</li>
+            <li class="pl-2"><strong>PuzzleScript-t30:</strong> Longer-horizon levels from the same pool, with a 30-turn horizon.</li>
+            <li class="pl-2"><strong>ARC-AGI-3 (Level 1):</strong> A different 2D game engine and representation.</li>
+            <li class="pl-2"><strong>MazeBench:</strong> A 3D open world with obstacle challenges, rendered as isometric-style ASCII projections, with a 100-turn horizon.</li>
+        </ul>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/qual_grid_v2.png" alt="Examples of evaluation benchmarks" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <p class="serif">
+            We study six models across three families: Claude Opus-{4.6, 5}, GPT {5.6-Sol, 6-Astra}, and GLM-{4.7, 5.3}.
+            We run three independent teacher sessions per model, each with an update budget of 20 and a gameplay budget of 150.
+        </p>
+
+        <h3 class="text-2xl font-bold mb-6 pt-8">A Motivating Observation</h3>
+        <p class="serif">
+            For Claude Opus-5, under matched game-rollout budgets, <strong>self-organized learning with self-generated games achieves comparable performance to a prescribed optimization loop (GEPA) that hill-climbs on 20 real, in-distribution games</strong>.
+            This calibrates the scale of gains we can expect with context optimization.
+            So agents can construct useful learning procedures and tasks -- but which agents do so, and what learning strategies do they use?
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/GEPA.png" alt="Self-organized learning versus GEPA" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <hr class="section-divider">
+
+        <h2 class="text-3xl font-bold mb-6 pt-8">Findings</h2>
+        <p class="serif">Our experiments led to three key findings.</p>
+
+        <h3 class="text-2xl font-bold mb-6 pt-8">1. Recent models self-improve</h3>
+
+        <p class="serif">
+            We first ask which models self-improve in our setting. On PuzzleScript-t20, <strong>the three more recently released and broadly capable generations improve over the default-context player baseline</strong>
+            (\(+20\%\) for Claude Opus-5, \(+10\%\) for GPT 6-Astra, \(+6\%\) for GLM 5.3).
+            This effect is not evident for all models, however; older generations show little or no improvement.
+            The gap indicates a potential trajectory where self-organized self-learning is increasingly evident in successive model generations.
+        </p>
+
+            <figure class="max-w-5xl mx-auto px-4 mb-6">
+                <div class="p-3 md:p-5">
+                    <img src="figs/model_performance.png" alt="Recent models self-improve" class="w-1/1 mx-auto h-auto rounded-lg">
+                </div>
+            </figure>
+
+        <h3 class="text-2xl font-bold mb-6 pt-8">2. Self-improving agents follow recognizable learning strategies</h3>
+        <p class="serif">
+            The performance gap does not tell us <em>which strategies</em> drive effective self-learning.
+            We find that <strong>models from different families employ similar, recognizable strategies</strong>, which align to both cognitive and machine learning literature.
+        </p>
+
+        <p class="serif">
+            <strong>Measurable behaviors.</strong> First, we look at teacher behaviors that can be measured algorithmically.
+            Models that self-improve frequently test the same game <em>with and without</em> their text artifacts to directly measure differences in player performance (A/B testing).
+            They also generate fewer trivial games (short solution lengths and high win rates).
+            Update behaviors are less universal across families: Claude Opus-5 and GLM 5.3 prefer smaller text updates, and GPT 6-Astra and GLM 5.3 make more updates that improve observed performance on at least one generated game, compared to their older generations.
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/alg_behaviors.png" alt="Algorithmically measured behaviors" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <p class="serif">
+            <strong>Self-regulated learning.</strong> Beyond directly quantifiable behaviors, we assess learning procedures using <em>Zimmerman's cyclical phases model</em>, a classic social-cognitive framework for self-regulated learning (SRL).
+            The framework organizes SRL into <em>forethought</em> (goal setting and planning), <em>performance</em> (executing strategies and self-monitoring), and <em>self-reflection</em> (evaluating performance and guiding subsequent learning).
+            We adapt this into a behavioral rubric over 13 subprocesses, treating the teacher-player system as the unit of analysis, and score teacher sessions with an LLM judge.
+        </p>
+
+        <p class="serif">
+            <strong>Models that effectively self-improve show higher SRL alignment.</strong> This is not necessarily a causal explanation, but quantifies that better self-learners exhibit human-recognizable task-selection, evaluation, and reflection strategies.
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/zimmerman.png" alt="Alignment to self-regulated learning subprocesses" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <p class="serif">
+            Below are excerpts from a Claude Opus-5 teacher session. The teacher writes a random level generator and BFS solver to filter its games for difficulty (<em>task strategies</em>),
+            uses A/B testing to evaluate its text artifacts (<em>self-experimentation</em>), and designs adversarial games to stress-test its advice, running validation tests across earlier games to identify regressions (<em>learning goal orientation</em>).
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/timeline10.png" alt="Excerpts from a Claude Opus-5 teacher session" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <p class="serif">
+            <strong>Learnability.</strong> Finally, self-improving models allocate effort across tasks in a similar way.
+            Most generated games are easy, but these are quickly discarded. Games with a 100% or 0% observed win rate have a low chance of being replayed next,
+            and most replays concentrate in games with a 20-60% win rate.
+            This "inverted-U" strongly resembles the <em>learnability</em> rewards used in asymmetric self-play and unsupervised environment design to encourage intermediate-difficulty tasks --
+            which are themselves rooted in the "Zone of Proximal Development" from developmental psychology.
+            <strong>Self-improving agents prefer similar task selection without being steered to do so.</strong>
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/learnability.png" alt="Learnability-seeking task selection" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <h3 class="text-2xl font-bold mb-6 pt-8">3. Self-learned text generalizes</h3>
+        <p class="serif">
+            Using Claude Opus-5, we next look at generalization from three perspectives: across environments, under different information regimes, and across models.
+        </p>
+
+        <p class="serif">
+            <strong>Across environments.</strong> We evaluate a fresh player with the teacher's context at intermediate updates along the self-learning trajectory.
+            The context optimized on 20-turn PuzzleScript gameplay improves PuzzleScript-t20 performance by \(21\%\), PuzzleScript-t30 by \(19\%\), ARC-AGI-3 by \(21\%\), and MazeBench SPL by \(0.15\).
+            This demonstrates <strong>transfer across game engines, grid sizes, core mechanics, 3D spatial navigation, longer-horizon reasoning, and state representations.</strong>
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/learning_curves.png" alt="Improvements transfer across benchmarks" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <p class="serif">
+            We also compare progressively richer teacher toolsets. A teacher with only Read/Write tools outperforms the baseline, so some of the improvement comes from the teacher's self-reflection on prior knowledge.
+            However, on all benchmarks besides MazeBench, Read/Write recovers less than \(50\%\) of the gain of Gameplay teachers, indicating benefit from generated experience.
+            Interestingly, in some sessions with Bash (but no Gameplay tool), the teacher still writes and runs game simulators in the sandbox to test its advice, despite no mention of gameplay in its prompt.
+            For a sufficiently strong teacher with Bash, an explicit Gameplay tool may be unnecessary.
+        </p>
+
+        <p class="serif">
+            We also let the teacher issue games in Python instead of PuzzleScript. Python gameplay recovers nearly all the performance gain of PuzzleScript gameplay in 3 out of 4 cases, suggesting that <em>PuzzleScript-awareness is not strictly necessary</em> to learn transferable context.
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/python_vs_ps.png" alt="Python versus PuzzleScript gameplay" class="w-1/2 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <p class="serif">
+            <strong>Teacher information shapes generalization.</strong> We do not give the teacher external tasks or validation feedback, but we do communicate information about the evaluation setting through its <em>context</em> and its <em>tools</em>.
+        </p>
+
+        <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
+            <li class="pl-2"><strong>Via context:</strong> We give the teacher increasingly detailed summaries of PuzzleScript-Narrow, a set of nine Sokoban-style games. Richer context initially improves performance on both PuzzleScript-Narrow and ARC-AGI-3, as the teacher is steered towards 2D grid-based games. At the highest detail, however, PuzzleScript-Narrow performance keeps improving while ARC-AGI-3 performance plateaus and slightly declines.</li>
+            <li class="pl-2"><strong>Via tools:</strong> Performance rises on both PuzzleScript-t20 and PuzzleScript-t30 as relevant tools are added. Imposing Gameplay turn- and token-budgets that match the t20 setting, however, improves PuzzleScript-t20 performance while PuzzleScript-t30 transfer falls.</li>
+        </ul>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/tool-generalization.png" alt="Generalization under richer information" class="w-1/1 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <p class="serif">
+            This yields an intuitive takeaway: <strong>increased awareness of the evaluation setting biases the teacher towards generating relevant experience, but can also encourage task-specific specialization.</strong>
+        </p>
+
+        <p class="serif">
+            <strong>Across models.</strong> Does self-optimized text contain general lessons that another agent can benefit from, or is it overfit to the target agent's own experience?
+            We evaluate Claude Opus-5 on PuzzleScript-t20 using the final context self-optimized by GPT 6-Astra, and vice versa.
+            <strong>The learned text transfers in both directions</strong>, even though GPT 6-Astra has a higher baseline performance.
+        </p>
+
+        <div class="flex justify-center my-8">
+            <table class="text-base serif border-y border-gray-300">
+                <thead>
+                    <tr class="border-b border-gray-300">
+                        <th class="px-6 py-2 text-left">Player</th>
+                        <th class="px-6 py-2 text-left">Context source</th>
+                        <th class="px-6 py-2 text-right">Win rate (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="px-6 py-2">Opus 5</td>
+                        <td class="px-6 py-2">None</td>
+                        <td class="px-6 py-2 text-right">25.4 <span class="text-gray-400 text-sm">± 3.6</span></td>
+                    </tr>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <td class="px-6 py-2"></td>
+                        <td class="px-6 py-2">GPT 6-Astra</td>
+                        <td class="px-6 py-2 text-right"><strong>47.5</strong> <span class="text-gray-400 text-sm">± 4.5</span></td>
+                    </tr>
+                    <tr>
+                        <td class="px-6 py-2">GPT 6-Astra</td>
+                        <td class="px-6 py-2">None</td>
+                        <td class="px-6 py-2 text-right">67.1 <span class="text-gray-400 text-sm">± 3.8</span></td>
+                    </tr>
+                    <tr class="bg-gray-50">
+                        <td class="px-6 py-2"></td>
+                        <td class="px-6 py-2">Opus 5</td>
+                        <td class="px-6 py-2 text-right"><strong>72.1</strong> <span class="text-gray-400 text-sm">± 4.0</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr class="section-divider">
+
+        <h2 class="text-3xl font-bold mb-6 pt-8">Implications and Limitations</h2>
+        <p class="serif">Our results align with the basic trend in deep learning that as models become more broadly capable, they require fewer human-imposed inductive biases.
+            We study this at the <em>meta-optimization</em> layer: <em>LLM agents compose their own self-improvement loops with minimal guidance on how to do so, and demonstrate recognizable learning strategies.</em></p>
+
+        <p class="serif">
+            Our analysis does not fully disentangle a causal relationship between self-regulatory strategies and self-improvement.
+            Another open question is whether these trends extend to more open-ended domains where models have weaker priors.
+            Games have an extensive literature on curriculum design and learnable task generation that models have likely ingested, and the use of PuzzleScript may bias the model (though our Python-game ablations show that PuzzleScript is not a critical factor).
+            Nonetheless, games provide a rich setting with several controllable axes of variation -- game mechanics, game horizon, and observation representations -- and we observe frontier models self-organizing their learning with improvements that transfer across these axes, and even between models.
+            Whether these trends extend to less well-specified domains remains an open question.
+        </p>
+    </article>
+
+    <hr class="section-divider">
+
+    <section class="max-w-4xl mx-auto px-6 mb-20">
+        <div class="text-left bg-white p-10 rounded-2xl border border-gray-200 shadow-sm mb-12">
+            <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Cite this work</p>
+            <!-- TODO: update with arXiv info -->
+            <pre class="text-base text-gray-600 leading-relaxed font-mono whitespace-pre-wrap break-words overflow-x-auto">@misc{sundaram2026selfimprove,
+    title={Do LLM Agents Still Need to Be Told How to Self-Improve?},
+    author={Shobhita Sundaram and Cansu Sancaktar and Phillip Isola},
+    year={2026},
+}</pre>
+        </div>
+    </section>
+
+    <footer class="max-w-5xl mx-auto px-6 py-20 mt-20 border-t border-gray-100">
+        <div class="max-w-2xl mx-auto px-6 text-center">
+        </div>
+    </footer>
+
+    <script>
+        // Simple scroll progress script
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("progress-bar").style.width = scrolled + "%";
+        };
+    </script>
+</body>
+</html>
