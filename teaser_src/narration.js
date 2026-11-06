@@ -16,8 +16,8 @@
 // (The intro plays faster than the rest of the video; see SPEED in index.html.)
 const INTRO = [
   { at: -6.4, text: 'We put an LLM agent in a workspace' },
-  { at: -5.2, text: ' and give it a <b>general <span style="white-space:nowrap">self-improvement</span> goal</b>' },
-  { at: -3.8, text: ' to get better at playing unseen games.' },
+  { at: -5.2, until: -3.8, text: ' and give it a <b>general <span style="white-space:nowrap">self-improvement</span> goal</b> to get better at playing unseen games.' },
+  // { at: -3.8, text: '' },
   { at: -2.2, text: ' It has <b>tools</b>, but <b>no real games</b> to practice on.' },
   { at: -0.8, text: ' What does it do?' },
 ];
