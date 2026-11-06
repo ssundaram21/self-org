@@ -114,8 +114,12 @@
     </header>
 
     <figure class="max-w-5xl mx-auto px-4 mb-6">
-        <div class="p-3 md:p-5">
-            <img src="figs/teaser8.png" alt="A teacher agent organizes its own learning procedure" class="w-1/1 mx-auto h-auto rounded-lg">
+        <div class="p-3 md:p-5 relative">
+            <video id="teaser" src="figs/teaser.mp4" poster="figs/teaser_poster.png" aria-label="A teacher agent organizes its own learning procedure" autoplay muted playsinline preload="auto" class="block w-1/1 mx-auto h-auto rounded-lg" onended="document.getElementById('replay').style.display = 'flex'"></video>
+            <button id="replay" style="display: none" onclick="this.style.display = 'none'; document.getElementById('teaser').play()" class="absolute bottom-6 right-6 md:bottom-8 md:right-8 flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-300 bg-white/90 text-sm text-gray-700 shadow-sm hover:bg-gray-100">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3"/></svg>
+                Replay
+            </button>
         </div>
     </figure>
 
@@ -290,7 +294,7 @@
 
             <figure class="max-w-5xl mx-auto px-4 mb-6">
                 <div class="p-3 md:p-5">
-                    <img src="figs/model_performance.png" alt="Recent models self-improve" class="w-1/1 mx-auto h-auto rounded-lg">
+                    <video src="figs/model_performance.mp4" poster="figs/model_performance_poster.png" aria-label="Recent models self-improve" muted playsinline preload="auto" class="play-once block w-1/1 mx-auto h-auto rounded-lg"></video>
                 </div>
             </figure>
 
@@ -309,7 +313,7 @@
 
         <figure class="max-w-5xl mx-auto px-4 mb-6">
             <div class="p-3 md:p-5">
-                <img src="figs/alg_behaviors.png" alt="Algorithmically measured behaviors" class="w-1/1 mx-auto h-auto rounded-lg">
+                <video src="figs/alg_behaviors.mp4" poster="figs/alg_behaviors_poster.png" aria-label="Algorithmically measured behaviors" muted playsinline preload="auto" class="play-once block w-1/1 mx-auto h-auto rounded-lg"></video>
             </div>
         </figure>
 
@@ -336,7 +340,13 @@
 
         <figure class="max-w-5xl mx-auto px-4 mb-6">
             <div class="p-3 md:p-5">
-                <img src="figs/timeline10.png" alt="Excerpts from a Claude Opus-5 teacher session" class="w-1/1 mx-auto h-auto rounded-lg">
+                <!-- <img src="figs/timeline10.png" alt="Excerpts from a Claude Opus-5 teacher session" class="w-1/1 mx-auto h-auto rounded-lg"> -->
+                <link rel="stylesheet" href="timeline/timeline.css">
+                <div id="tl" class="tl" tabindex="0"></div>
+                <script src="timeline/data_opus5.js"></script>
+                <script src="timeline/data_astra.js"></script>
+                <script src="timeline/data_glm.js"></script>
+                <script src="timeline/timeline.js"></script>
             </div>
         </figure>
 
@@ -368,7 +378,7 @@
 
         <figure class="max-w-5xl mx-auto px-4 mb-6">
             <div class="p-3 md:p-5">
-                <img src="figs/learning_curves.png" alt="Improvements transfer across benchmarks" class="w-1/1 mx-auto h-auto rounded-lg">
+                <video src="figs/learning_curves.mp4" poster="figs/learning_curves_poster.png" aria-label="Improvements transfer across benchmarks" muted playsinline preload="auto" class="play-once block w-1/1 mx-auto h-auto rounded-lg"></video>
             </div>
         </figure>
 
@@ -400,7 +410,7 @@
 
         <figure class="max-w-5xl mx-auto px-4 mb-6">
             <div class="p-3 md:p-5">
-                <img src="figs/tool-generalization.png" alt="Generalization under richer information" class="w-1/1 mx-auto h-auto rounded-lg">
+                <video src="figs/tool_generalization.mp4" poster="figs/tool_generalization_poster.png" aria-label="Generalization under richer information" muted playsinline preload="auto" class="play-once block w-1/1 mx-auto h-auto rounded-lg"></video>
             </div>
         </figure>
 
@@ -490,6 +500,15 @@
             let scrolled = (winScroll / height) * 100;
             document.getElementById("progress-bar").style.width = scrolled + "%";
         };
+        const playOnce = new IntersectionObserver((entries) => {
+            entries.forEach((e) => {
+                if (e.isIntersecting) {
+                    e.target.play();
+                    playOnce.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.6 });
+        document.querySelectorAll("video.play-once").forEach((v) => playOnce.observe(v));
     </script>
 </body>
 </html>
