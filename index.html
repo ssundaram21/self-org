@@ -101,7 +101,7 @@
             </div>
                 </div>
 
-        <div class="flex justify-center mt-8">
+        <div class="flex flex-wrap justify-center gap-3 mt-8">
             <!-- TODO: arXiv link -->
             <a href="#" target="_blank" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -109,6 +109,37 @@
                     <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
                 </svg>
                 Paper
+            </a>
+            <!-- TODO: GitHub link -->
+            <a href="#" target="_blank" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                Code
+            </a>
+            <!-- TODO: Hugging Face dataset link -->
+            <a href="#" target="_blank" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <mask id="hf-face">
+                        <rect width="24" height="24" fill="#fff" />
+                        <circle cx="8.6" cy="9.4" r="1.4" fill="#000" />
+                        <circle cx="15.4" cy="9.4" r="1.4" fill="#000" />
+                        <path d="M8 13.2c1 2 2.4 2.9 4 2.9s3-.9 4-2.9z" fill="#000" />
+                        <path d="M1.8 17.6c-.5-.9.6-1.8 1.4-1.1l2.4 2-.7-2.6c-.3-1 1.1-1.5 1.6-.6l1.6 3.4c.5 1.2.1 2.6-1 3.2-1 .6-2.3.4-3.1-.5z" fill="#000" stroke="#000" stroke-width="2" />
+                        <path d="M22.2 17.6c.5-.9-.6-1.8-1.4-1.1l-2.4 2 .7-2.6c.3-1-1.1-1.5-1.6-.6l-1.6 3.4c-.5 1.2-.1 2.6 1 3.2 1 .6 2.3.4 3.1-.5z" fill="#000" stroke="#000" stroke-width="2" />
+                    </mask>
+                    <circle cx="12" cy="11" r="9" mask="url(#hf-face)" />
+                    <path d="M1.8 17.6c-.5-.9.6-1.8 1.4-1.1l2.4 2-.7-2.6c-.3-1 1.1-1.5 1.6-.6l1.6 3.4c.5 1.2.1 2.6-1 3.2-1 .6-2.3.4-3.1-.5z" />
+                    <path d="M22.2 17.6c.5-.9-.6-1.8-1.4-1.1l-2.4 2 .7-2.6c.3-1-1.1-1.5-1.6-.6l-1.6 3.4c-.5 1.2-.1 2.6 1 3.2 1 .6 2.3.4 3.1-.5z" />
+                </svg>
+                Data
+            </a>
+            <a href="#explorer" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                Explorer
             </a>
         </div>
     </header>
@@ -321,7 +352,7 @@
         <h2 class="text-3xl font-bold mb-6 pt-8">Findings</h2>
         <!-- <p class="serif">Our experiments led to three key findings.</p> -->
 
-        <figure class="max-w-5xl mx-auto px-4 mb-6">
+        <figure id="explorer" class="max-w-5xl mx-auto px-4 mb-6 scroll-mt-6">
             <div class="p-3 md:p-5">
                 <!-- <img src="figs/timeline10.png" alt="Excerpts from a Claude Opus-5 teacher session" class="w-1/1 mx-auto h-auto rounded-lg"> -->
                 <link rel="stylesheet" href="timeline/timeline.css">
