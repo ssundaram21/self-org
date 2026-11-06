@@ -321,6 +321,20 @@
         <h2 class="text-3xl font-bold mb-6 pt-8">Findings</h2>
         <!-- <p class="serif">Our experiments led to three key findings.</p> -->
 
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <!-- <img src="figs/timeline10.png" alt="Excerpts from a Claude Opus-5 teacher session" class="w-1/1 mx-auto h-auto rounded-lg"> -->
+                <link rel="stylesheet" href="timeline/timeline.css">
+                <div id="tl" class="tl" tabindex="0"></div>
+                <script src="timeline/data_opus5.js"></script>
+                <script src="timeline/data_astra.js"></script>
+                <script src="timeline/data_glm.js"></script>
+                <script src="timeline/timeline.js"></script>
+            </div>
+        </figure>
+
+
+
         <h3 class="text-2xl font-bold mb-6 pt-8">1. Recent models self-improve</h3>
 
         <!-- <p class="serif">
@@ -376,18 +390,7 @@
             uses A/B testing to evaluate its text artifacts (<em>self-experimentation</em>), and designs adversarial games to stress-test its advice, running validation tests across earlier games to identify regressions (<em>learning goal orientation</em>).
         </p> -->
 
-        <figure class="max-w-5xl mx-auto px-4 mb-6">
-            <div class="p-3 md:p-5">
-                <!-- <img src="figs/timeline10.png" alt="Excerpts from a Claude Opus-5 teacher session" class="w-1/1 mx-auto h-auto rounded-lg"> -->
-                <link rel="stylesheet" href="timeline/timeline.css">
-                <div id="tl" class="tl" tabindex="0"></div>
-                <script src="timeline/data_opus5.js"></script>
-                <script src="timeline/data_astra.js"></script>
-                <script src="timeline/data_glm.js"></script>
-                <script src="timeline/timeline.js"></script>
-            </div>
-        </figure>
-
+        
         <!-- <p class="serif">
             <strong>Learnability.</strong> Finally, self-improving models allocate effort across tasks in a similar way.
             Most generated games are easy, but these are quickly discarded. Games with a 100% or 0% observed win rate have a low chance of being replayed next,
