@@ -166,8 +166,8 @@
             Both directions motivate a basic question: <strong>do capable models still need us to specify how they should self-improve?</strong>
         </p> -->
 
-        <p class="serif">In our new paper, we study the natural behavior of an LLM agent when it is given the primitive tools and resources for self-improvement,
-            but is <em>not</em> wrapped in an explicit self-improvement algorithm. We find that <strong>sufficiently capable models successfully self-organize learning procedures and self-improve on held-out tasks</strong> -- without access to real-world tasks or validation scores!</p>
+        <!-- <p class="serif">In our new paper, we study the natural behavior of an LLM agent when it is given the primitive tools and resources for self-improvement,
+            but is <em>not</em> wrapped in an explicit self-improvement algorithm. We find that <strong>sufficiently capable models successfully self-organize learning procedures and self-improve on held-out tasks</strong> -- without access to real-world tasks or validation scores!</p> -->
 
         <!-- <p class="serif">
             Our setting matters for both:
@@ -190,11 +190,11 @@
         </p> -->
 
         <h3 class="text-2xl font-bold mb-6 pt-8">Teacher and Player</h3>
-        <p class="serif">
+        <!-- <p class="serif">
             An instance of that same model serves as the <em>teacher</em>. The teacher is a frozen model in a persistent, sandboxed harness session (Claude Code, Pi), and is given:
-        </p>
+        </p> -->
 
-        <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
+        <!-- <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
             <li class="pl-2"><strong>A goal:</strong> Improve the player's performance on unseen single-player games by writing text artifacts (e.g., editing the prompt, creating skill files), such that those artifacts are useful for games with different tasks or mechanics.</li>
             <li class="pl-2"><strong>Tools:</strong> Read/Write for sandbox files, Bash, and a <strong>Gameplay</strong> tool. The teacher calls the Gameplay tool with a game source file and, optionally, a directory of player text artifacts. The game is executed in a fresh player session, and the teacher gets back the score and transcript.</li>
             <li class="pl-2"><strong>A budget:</strong> An <em>update budget</em> (number of edits to the player context) and a <em>gameplay budget</em> (number of gameplays the teacher may observe).</li>
@@ -203,7 +203,7 @@
         <p class="serif">
             Importantly, <strong>we do not instruct the teacher when or how to use these tools</strong>. The teacher has no external games to train on -- if it wants practice games, it has to write them itself.
             In our main experiments games are written in <em>PuzzleScript</em>, a domain-specific language for 2D grid-based puzzle games, and the Gameplay tool rejects games that do not compile or where the win state is verifiably unreachable.
-        </p>
+        </p> -->
 
         <details>
             <summary>Formal Setup</summary>
@@ -235,12 +235,12 @@
             </div>
         </details>
 
-        <p class="serif">
+        <!-- <p class="serif">
             This setting has notable similarities to asymmetric self-play, in which a teacher generates tasks for a student to solve.
             The difference is that we do not mandate how the teacher uses its budget and tools, and we optimize in <em>text-space</em> rather than weight-space.
             <strong>The teacher's role extends beyond task generation to constructing the learning procedure itself.</strong>
             Since updates are in text, we also get a readable record of changes in player behavior.
-        </p>
+        </p> -->
 
         <!-- <h3 class="text-2xl font-bold mb-6 pt-8">Measuring Self-Improvement through Generalization</h3>
         <p class="serif">
@@ -403,10 +403,10 @@
             <strong>Teacher information shapes generalization.</strong> We do not give the teacher external tasks or validation feedback, but we do communicate information about the evaluation setting through its <em>context</em> and its <em>tools</em>.
         </p> -->
 
-        <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
+        <!-- <ul class="serif list-disc list-outside mb-6 space-y-2 ml-8">
             <li class="pl-2"><strong>Via context:</strong> We give the teacher increasingly detailed summaries of PuzzleScript-Narrow, a set of nine Sokoban-style games. Richer context initially improves performance on both PuzzleScript-Narrow and ARC-AGI-3, as the teacher is steered towards 2D grid-based games. At the highest detail, however, PuzzleScript-Narrow performance keeps improving while ARC-AGI-3 performance plateaus and slightly declines.</li>
             <li class="pl-2"><strong>Via tools:</strong> Performance rises on both PuzzleScript-t20 and PuzzleScript-t30 as relevant tools are added. Imposing Gameplay turn- and token-budgets that match the t20 setting, however, improves PuzzleScript-t20 performance while PuzzleScript-t30 transfer falls.</li>
-        </ul>
+        </ul> -->
 
         <figure class="max-w-5xl mx-auto px-4 mb-6">
             <div class="p-3 md:p-5">
@@ -414,9 +414,9 @@
             </div>
         </figure>
 
-        <p class="serif">
+        <!-- <p class="serif">
             This yields an intuitive takeaway: <strong>increased awareness of the evaluation setting biases the teacher towards generating relevant experience, but can also encourage task-specific specialization.</strong>
-        </p>
+        </p> -->
 
         <!-- <p class="serif">
             <strong>Across models.</strong> Does self-optimized text contain general lessons that another agent can benefit from, or is it overfit to the target agent's own experience?
