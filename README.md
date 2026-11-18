@@ -11,6 +11,10 @@
 
 **Tl;DR** We give a frozen LLM agent a general self-improvement goal, a budget, and basic tools for writing games and editing text. We don't give it a recipe or tell it how to compose those tools. We find that sufficiently capable LLM agents successfully compose their own self-improvement loops using human-recognizable learning strategies.
 
+___
+## Abstract
+LLM agents increasingly drive their own learning. Self-improvement methods delegate various components of model optimization to the models themselves. As models become more capable, this motivates a basic question: do these increasingly capable models still need us to specify how they should self-improve? In this paper we study an autonomous paradigm in which, given basic primitives, resources, and a general goal for self-improvement, agents construct their own self-learning algorithm for context-based optimization. Using the setting of gameplay as a testbed, a frozen LLM agent is given a compute budget and tools for collecting experience and updating text documents, and allowed to freely experiment without an externally imposed loop or access to real-world data. We find that sufficiently capable models do self-improve under these conditions, demonstrating strategies that align with classic cognitive frameworks for self-regulated learning and constructs from machine learning literature on self-generated curricula. Furthermore, we study the extent to which the learned text artifacts transfer to external benchmarks, observing improvement across different game horizons, mechanics, and 3D navigation.
+
 ## Setup
 
 Requires git, node (>= 12; the `mazebench` benchmark needs >= 20), npm, Python >= 3.10, and a
@@ -19,65 +23,58 @@ container runtime: Singularity/Apptainer or Docker (Linux, or Docker Desktop on 
     ./setup.sh          # game engines, the agent containers, pip requirements
     ./download.sh       # the benchmarks, into data/benchmarks/
 
-The runtime is Singularity if it is installed, else Docker; set `SELFORG_RUNTIME=singularity` or
-`SELFORG_RUNTIME=docker` to choose, for both setup and runs. To (re)build only the agent containers,
-run `./containers/build.sh`. Docker containers run as your user and are removed when their session
-ends; any left behind by a killed run can be removed with
-`docker rm -f $(docker ps -aq --filter label=selforg)`.
+**Setting your container**
+- Set `SELFORG_RUNTIME=singularity` to run in a Singularity container.
+- Set `SELFORG_RUNTIME=docker` to run in a Docker container.
+- To (re)build the agent containers, run `./containers/build.sh`.
 
-Credentials: `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` for Claude models,
-`OPENROUTER_API_KEY` for other models, `ARC_API_KEY` for the ARC-AGI-3 benchmark.
+**Credentials:**
+- For Claude models (using headless Claude Code sessions), set`CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`.
+- For Non-Claude models (using headless Pi sessions) set `OPENROUTER_API_KEY`.
+- For ARC-AGI-3 evals, set `ARC_API_KEY`.
 
 ## Run
-
+The main entry point script is:
     ./run.sh            # baseline, train, evaluate
 
-which is these three steps:
+Which executes these three steps:
 
     python eval.py  out=evals/baseline/ps_t20/seed1 benchmark=ps_t20     # the default player
     python train.py out=runs/seed1                                       # the teacher optimizes player_folder/
     python eval.py  out=evals/trained/ps_t20/seed1 benchmark=ps_t20 \
         artifacts=runs/seed1/player_folder                               # the optimized player
 
-The gap between the two `report.json` win rates is the result.
-
 ## How the pipeline works
 
-**The player** (`selforg/player.py`) plays one game in a fresh session. Each turn it is shown the
+**Player sessions** (`selforg/player.py`) plays one game in a fresh session. Each turn it is shown the
 game's feedback and replies with a line `ACTION: ...`, until the game is won or its turn or
-output-token budget runs out. All it has is a `player_folder`: `player_prompt.md` is its system
-prompt, and any other files are in its working directory, which it can read. The baseline player
-has a three-line default prompt and no files.
+output-token budget runs out. All it has is a given system prompt and a `player_folder` containing further context (such as skill files). The baseline player has a short default prompt and no files.
 
-**Training** (`train.py`, `selforg/teacher.py`) is one long teacher session. The teacher works in
-a sandbox containing `player_folder/`, seeded with the default prompt, and is told only to make
-the player better at unfamiliar games. It can edit `player_folder/` however it wants. With the
-Gameplay tool (`selforg/gameplay.py`) it can also write its own games and have a fresh player
-play them, with or without its current artifacts, and read the full transcript back. Before a
-game is played it is validated: it must compile, and a PuzzleScript level is rejected if a solver
-proves it unwinnable. The teacher never sees the evaluation benchmarks.
+**Teacher Sessions** (`train.py`, `selforg/teacher.py`) "Training" is one long teacher session. The teacher works in
+a sandbox containing `player_folder/`, seeded with the default prompt, and is given a general goal to make
+the player better at unknown games. It can edit `player_folder/` and update the player prompt however it wants. 
 
-Two budgets bound a run:
+When the Gameplay tool is enabled (`selforg/gameplay.py`) the teacher can write its own games and observe a fresh player
+play them, with or without its current text artifacts. The Gameplay tool validates that the provided game source file compiles, and for PuzzleScript games that they are solvable.
 
-- **updates**: one update is one tool call that leaves `player_folder/` in a new state. Each state
-  is saved as `library_versions/vNNN` (`v001` is the seed).
-- **plays**: how many games the teacher may run.
+Each teacher session is subject to two budgets:
+- **Updates**: One update is a tool call that leaves `player_folder/` in a new state. Each state
+  is saved as `library_versions/vNNN` (`v001` is the default prompt).
+- **Plays**: How many games the teacher may observe with the Gameplay tool.
 
-The run ends on the update that reaches `updates`, or when the teacher stops with its gameplay
-budget spent. If it stops earlier it is told to keep working.
+The run ends when either budget is exhausted. If the teacher tries to stop earlier, it is nudged to continue.
 
-**Evaluation** (`eval.py`) plays every game of a benchmark several times with a given
-`player_folder` (or none, for the baseline) and reports the mean score. Each benchmark's default turns,
-tokens and rollouts per game are in `selforg/config.py`.
+**Evaluation** (`eval.py`) plays every game in an external benchmark with a given
+`player_folder` (or none, for the baseline) and reports the mean score. Each benchmark's default turn horizon and token budget are in `selforg/config.py`.
 
-Teacher and player both run as agent sessions inside Singularity or Docker containers
+Teacher and player sessions both run as agent sessions inside Singularity or Docker containers
 (`selforg/harness.py`): Claude models in Claude Code, `openrouter/...` models in Pi.
 
-## Options
+## Configs
 
-Options are `key=value` arguments. Defaults and all fixed settings are in `selforg/config.py`.
+Config options are `key=value` arguments; see `selforg/config.py`.
 
-`train.py`:
+`train.py` config options:
 
 | option | default | |
 |---|---|---|
@@ -91,8 +88,6 @@ Options are `key=value` arguments. Defaults and all fixed settings are in `selfo
 | `updates` | `20` | update budget |
 | `plays` | `150` | gameplay budget |
 | `context` | none | a file describing the target games, appended to the teacher's prompt (see `data/context/`) |
-
-`games`, `budget`, `horizon`, `tokens` and `plays` only matter with `tools=gameplay`.
 
 `eval.py`:
 
