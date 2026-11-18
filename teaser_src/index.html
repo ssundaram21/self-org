@@ -1,0 +1,457 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Jakarta; src: url("file:///data/vision/phillipi/self-improvement/.local/share/fonts/PlusJakartaSans-Light.ttf"); font-weight: 300; }
+@font-face { font-family: Jakarta; src: url("file:///data/vision/phillipi/self-improvement/.local/share/fonts/PlusJakartaSans-LightItalic.ttf"); font-weight: 300; font-style: italic; }
+@font-face { font-family: Jakarta; src: url("file:///data/vision/phillipi/self-improvement/.local/share/fonts/PlusJakartaSans-SemiBold.ttf"); font-weight: 600; }
+@font-face { font-family: Inter; src: url("file:///data/vision/phillipi/self-improvement/.local/share/fonts/Inter-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: Inter; src: url("file:///data/vision/phillipi/self-improvement/.local/share/fonts/Inter-SemiBold.ttf"); font-weight: 600; }
+@font-face { font-family: Mono; src: url("file:///usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf"); }
+html, body { margin: 0; width: 1920px; height: 1240px; overflow: hidden; background: #fff; }
+#stage { position: relative; width: 1920px; height: 1240px; font-family: Jakarta; color: #231f20; }
+.abs { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.pill { font-family: Inter; font-weight: 700; color: #d81a61; background: rgba(216, 26, 97, .14);
+        border-radius: 999px; padding: 6px 22px; font-size: 34px; white-space: nowrap; }
+.pill sub { font-size: .8em; vertical-align: -0.35em; }
+.bubble { background: #f3f4f5; border-radius: 26px; font-family: Mono; font-size: 25px; line-height: 1.38;
+          text-align: center; padding: 26px 22px; box-sizing: border-box; white-space: pre-wrap; }
+.mono { font-family: Mono; }
+.card { background: #fffef5; border: 5px solid #231f20; border-radius: 30px; box-sizing: border-box; }
+.ver { font-family: Mono; font-size: 40px; background: #d5e4ec; border-radius: 22px; padding: 0 22px; line-height: 1.25; }
+.stamp { font-family: Inter; font-weight: 700; font-size: 30px; color: #fff; border-radius: 12px; padding: 4px 16px; }
+.caption { font-family: Jakarta; font-weight: 300; font-size: 50px; text-align: center; width: 1700px; }
+.caption b { font-weight: 600; }
+.narr { width: 1700px; height: 160px; display: flex; align-items: center; justify-content: center; text-align: center;
+        font-family: Jakarta; font-weight: 300; font-size: 42px; line-height: 1.3; color: #231f20; }
+.narr b { font-weight: 600; }
+.narr file { font-family: Mono; font-size: .82em; background: #eceef0; border: 2px solid #ced0d3;
+             border-radius: 10px; padding: 0 10px; white-space: nowrap; }
+.narr ver { font-family: Mono; font-size: .82em; background: #d5e4ec; border-radius: 12px; padding: 0 10px; white-space: nowrap; }
+.small { font-family: Jakarta; font-weight: 300; font-size: 22px; color: #818385; }
+</style></head>
+<body><div id="stage"></div>
+<script src="data.js"></script>
+<script src="narration.js"></script>
+<script>
+const $ = (h) => { const t = document.createElement('div'); t.innerHTML = h.trim(); return t.firstChild; };
+const stage = document.getElementById('stage');
+const add = (h) => { const e = $(h); e.classList.add('abs'); stage.appendChild(e); return e; };
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = (v) => { v = clamp(v); return v * v * (3 - 2 * v); };
+const pop = (v) => { v = clamp(v); const s = 1.70158; return 1 + (s + 1) * Math.pow(v - 1, 3) + s * Math.pow(v - 1, 2); };
+const lerp = (a, b, v) => a + (b - a) * v;
+const span = (t, a, b) => clamp((t - a) / (b - a));
+
+function crop(key, w) {
+  const [x, y, cw, ch] = { robot: [49, 26, 45, 37], docs: [366.5, 33, 35, 43], probot: [241, 36.5, 24, 20],
+                           nodoc: [271.5, 33, 20, 24], doc: [265.5, 208, 18, 20], transcript: [139.5, 133, 24, 31] }[key];
+  return `<svg width="${w}" height="${w * ch / cw}" viewBox="${x} ${y} ${cw} ${ch}"><image href="../teaser.svg" width="407.91" height="292.81"/></svg>`;
+}
+function place(e, x, y, s = 1, o = 1) {
+  e.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+  e.style.opacity = o;
+  e.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
+}
+// Pop in at (x, y) around the element's centre.
+function popIn(e, x, y, t0, t, o = 1, dur = .5) {
+  const v = span(t, t0, t0 + dur), w = e.offsetWidth, h = e.offsetHeight, s = v > 0 ? pop(v) : 0;
+  place(e, x + w * (1 - s) / 2, y + h * (1 - s) / 2, s, v > 0 ? o * Math.min(1, v * 3) : 0);
+}
+function type(e, text, t, t0, cps = 40) {
+  e.textContent = text.slice(0, Math.max(0, Math.floor((t - t0) * cps)));
+}
+
+// ---------------------------------------------------------------- boards
+function tile(ctx, obj, x, y, s) {
+  const sp = obj.sprite || [];
+  if (!sp.length) { if (obj.colors[0]) { ctx.fillStyle = obj.colors[0]; ctx.fillRect(x, y, s, s); } return; }
+  const n = sp.length, m = sp[0].length, px = s / m, py = s / n;
+  for (let r = 0; r < n; r++) for (let c = 0; c < m; c++) {
+    const col = sp[r][c] === '.' ? null : obj.colors[+sp[r][c]];
+    if (col) { ctx.fillStyle = col; ctx.fillRect(x + c * px, y + r * py, Math.ceil(px), Math.ceil(py)); }
+  }
+}
+function board(canvas, rp, f, maxPx) {
+  const game = DATA.games[rp.game], legend = rp.legends[f.l];
+  const grid = f.g.map(row => row.split('|').map(c => c === '.' ? [] : [...c]));
+  const rows = grid.length, cols = grid[0].length, cell = Math.floor(maxPx / Math.max(rows, cols));
+  canvas.width = cols * cell; canvas.height = rows * cell;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cols * cell, rows * cell);
+  const bg = game.objects[game.background], obj = ch => game.objects[String(legend[ch] || ch).toLowerCase()];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    if (bg) tile(ctx, bg, c * cell, r * cell, cell);
+    grid[r][c].map(obj).filter(Boolean)
+      .sort((a, b) => game.layers.indexOf(a.name.toLowerCase()) - game.layers.indexOf(b.name.toLowerCase()))
+      .forEach(o => tile(ctx, o, c * cell, r * cell, cell));
+  }
+}
+const drawn = new Map();
+function show(canvas, rp, i, px) {
+  const key = rp.game + ':' + i + ':' + px;
+  if (drawn.get(canvas) === key) return;
+  drawn.set(canvas, key);
+  board(canvas, rp, rp.frames[i], px);
+}
+const ARROW = { up: '↑', down: '↓', left: '←', right: '→', action: 'X', undo: 'undo', restart: 'restart' };
+
+// ---------------------------------------------------------------- elements
+const W = { x: 180, y: 40, w: 1700, h: 1000 };
+const frame = add(`<svg width="1920" height="1080"><rect x="${W.x}" y="${W.y}" width="${W.w}" height="${W.h}" rx="36"
+  fill="none" stroke="#2b2c2b" stroke-width="5" pathLength="1000" stroke-dasharray="1000"/></svg>`);
+const shelf = add(`<div style="width:1100px;height:225px;border-radius:28px;background:#f3f4f5;border:4px solid #ced0d3;box-sizing:border-box;
+  background-image:repeating-linear-gradient(120deg, transparent 0 46px, rgba(255,255,255,.8) 46px 58px)">
+  <div class="mono" style="position:absolute;left:24px;top:8px;font-size:44px">Files</div></div>`);
+const timeLbl = add(`<div style="font-family:Jakarta;font-style:italic;font-weight:300;font-size:46px;width:150px;text-align:center"></div>`);
+
+const robot = add(`<div>${crop('robot', 210)}</div>`);
+const caption = add(`<div class="caption"></div>`);
+// INTRO, NARRATION, THOUGHTS, GOAL and FAST_FORWARD_CAPTION come from narration.js.
+const intro = add(`<div class="caption" style="font-size:64px;width:1500px;line-height:1.35">${INTRO.map(i => `<span>${i.text}</span>`).join('')}</div>`);
+const goal = add(`<div style="width:520px;background:#fff;border:3px solid #ced0d3;border-radius:18px;padding:12px 18px;box-sizing:border-box">
+  <div style="font-family:Inter;font-weight:700;color:#d81a61;font-size:18px;letter-spacing:.08em">GOAL</div>
+  <div class="gtext" style="font-size:22px;line-height:1.3;min-height:58px"></div></div>`);
+const TOOLS = ['READ', 'WRITE', 'EDIT', 'BASH', 'PLAY'];
+const toolsLbl = add(`<div style="font-family:Inter;font-weight:700;color:#d81a61;font-size:18px;letter-spacing:.08em">TOOLS</div>`);
+const tools = TOOLS.map(k => add(`<div class="pill" style="font-size:20px;padding:4px 14px">${k}</div>`));
+const toolX = tools.map((_, i) => 76 + tools.slice(0, i).reduce((a, e) => a + e.offsetWidth + 8, 0));
+
+function arrow(w, color = '#8e93a4', dashed = false) {
+  return add(`<svg width="${w + 20}" height="40"><line x1="4" y1="20" x2="${w - 18}" y2="20" stroke="${color}" stroke-width="7"
+    stroke-linecap="round" pathLength="100" stroke-dasharray="100"/><polygon points="${w - 22},6 ${w},20 ${w - 22},34" fill="${color}"/></svg>`);
+}
+function above(pill, ax, w, t0, t, o = 1) { popIn(pill, ax + w / 2 - pill.offsetWidth / 2, 435, t0, t, o); }
+function drawArrow(e, t0, t) {
+  const v = ease(span(t, t0, t0 + .5));
+  e.querySelector('line').style.strokeDashoffset = 100 * (1 - v);
+  e.querySelector('polygon').style.opacity = v > .9 ? 1 : 0;
+  e.style.opacity = v > 0 ? 1 : 0;
+}
+
+// Scene-row elements.
+const bubble1 = add(`<div class="bubble" style="width:340px;height:370px"></div>`);
+const bubble2 = add(`<div class="bubble" style="width:300px;height:300px"></div>`);
+const a1 = arrow(140), a2 = arrow(130), a3 = arrow(130), a1p = arrow(140, '#d81a61');
+const p1 = add(`<div class="pill">WRITE</div>`), p2 = add(`<div class="pill">PLAY</div>`), p3 = add(`<div class="pill">WRITE</div>`);
+const p2x = add(`<div class="pill">PLAY<sub>×2</sub></div>`), p3e = add(`<div class="pill">EDIT</div>`);
+const game = add(`<div style="width:240px;text-align:center"><canvas></canvas><div class="mono gname" style="font-size:24px;margin-top:6px"></div></div>`);
+const branch = add(`<svg width="200" height="330"><path d="M 10 10 C 90 10, 70 280, 180 280" fill="none" stroke="#9092a3" stroke-width="6"
+  stroke-dasharray="14 12" stroke-linecap="round"/><polygon points="168,268 192,280 168,292" fill="#9092a3"/></svg>`);
+const ghost = add(`<div style="text-align:center"><div class="bubble" style="width:210px;padding:14px;font-size:24px">Re-run\ngame17?</div>
+  <div style="font-family:Inter;font-weight:600;color:#9a9ca0;font-size:26px;margin-top:4px">considered</div></div>`);
+
+function playerCard(icon) {
+  const e = add(`<div class="card" style="width:400px;height:300px">
+    <div style="position:absolute;left:18px;top:8px;font-size:34px">Player</div>
+    <div style="position:absolute;left:22px;top:70px">${crop('probot', 92)}</div>
+    <div class="icon" style="position:absolute;left:34px;top:160px;text-align:center"></div>
+    <div style="position:absolute;left:150px;top:22px;width:230px;height:230px;display:flex;align-items:center;justify-content:center"><canvas></canvas></div>
+    <div class="mono act" style="position:absolute;left:150px;top:254px;width:230px;text-align:center;font-size:22px;color:#555"></div>
+    <div class="stamp" style="position:absolute;right:16px;top:20px;opacity:0"></div></div>`);
+  setIcon(e, icon);
+  return e;
+}
+function setIcon(card, icon) {
+  card.querySelector('.icon').innerHTML = icon === 'none' ? crop('nodoc', 58)
+    : `${crop('doc', 52)}<div class="mono" style="font-size:22px;margin-top:-4px">${icon}</div>`;
+}
+const cardA = playerCard('none'), cardB = playerCard('none'), cardC = playerCard('v15');
+function playCard(card, rp, t, t0, fps = 4.5) {
+  const i = Math.max(0, Math.min(rp.frames.length - 1, Math.floor((t - t0) * fps)));
+  show(card.querySelector('canvas'), rp, i, 230);
+  const a = rp.frames[i].a;
+  card.querySelector('.act').textContent = i ? `turn ${i}  ${ARROW[a] || a}` : '';
+  return t >= t0 + rp.frames.length / fps;
+}
+function stamp(card, won, on) {
+  const s = card.querySelector('.stamp');
+  s.textContent = won ? 'WON' : 'LOST';
+  s.style.background = won ? '#00A878' : '#BB4430';
+  s.style.opacity = on;
+}
+const docs = add(`<div style="width:170px;text-align:center">${crop('docs', 150)}
+  <div style="display:flex;justify-content:center;margin-top:8px"><div class="ver"><span class="vold"></span><span class="vnew"></span></div></div></div>`);
+
+// Files shelf contents.
+const thumbs = DATA.plays.length && Array.from({ length: 19 }, (_, i) => {
+  const e = add(`<div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center"><canvas></canvas></div>`);
+  show(e.querySelector('canvas'), DATA.thumbs['g' + (i + 1)], 0, 56);
+  return e;
+});
+const transcripts = add(`<div style="text-align:center;width:120px">${crop('transcript', 72)}<div class="mono tn" style="font-size:22px"></div></div>`);
+const artifacts = add(`<div style="width:150px;height:200px;background:#d5e4ec;border-radius:22px;text-align:center;padding-top:6px;box-sizing:border-box">
+  <div class="mono" style="font-size:20px;line-height:1.2">Player<br>artifacts</div><div style="margin-top:6px">${crop('doc', 60)}</div>
+  <div class="mono av" style="font-size:24px"></div></div>`);
+
+// Fast-forward timeline, drawn like the website's (timeline.js).
+const WIN = '#00A878', LOSS = '#BB4430', EDIT = '#009DE0', NS = 'http://www.w3.org/2000/svg';
+const TL = DATA.tl, TLW = TL.items[TL.items.length - 1].x + .5, TLPX = 1400, TU = TLPX / (TLW + 1.2), K = 2.2;
+const tl = add(`<div style="width:${TLPX}px"><div class="tlleg" style="display:flex;justify-content:flex-end;gap:${K}rem;font-size:${.8 * K}rem;margin-bottom:${.5 * K}rem"></div></div>`);
+const sq = (bg, r = 0, w = 10, h = 10) => `<i style="display:inline-block;width:${w * K}px;height:${h * K}px;background:${bg};border-radius:${r};margin-right:${.3 * K}rem;vertical-align:-1px"></i>`;
+const grp = (name, row) => `<div style="display:flex;flex-direction:column;align-items:center"><span style="font-size:.72em;color:#444">${name}</span>
+  <div style="display:flex;gap:${.6 * K}rem;align-items:center">${row}</div></div>`;
+tl.querySelector('.tlleg').innerHTML = grp('Condition', `<span>${sq('#6b7280', '50%')}Default</span><span>${sq('#6b7280')}Learned</span>`)
+  + grp('Result', `<span>${sq(WIN)}Win</span><span>${sq(LOSS)}Loss</span>`)
+  + grp('&nbsp;', `<span>${sq(EDIT, 0, 2, 12)}Update</span>`);
+const tsvg = document.createElementNS(NS, 'svg');
+const fs = 13 * K / TU, tTop = -1.5 - 15 * K / TU, tBot = 1.6 + fs * 2.6;
+tsvg.setAttribute('viewBox', `-0.6 ${tTop} ${TLW + 1.2} ${tBot - tTop}`);
+tsvg.setAttribute('width', TLPX); tsvg.setAttribute('height', (tBot - tTop) * TU);
+tsvg.style.fontFamily = 'Jakarta'; tsvg.style.display = 'block';
+tl.appendChild(tsvg);
+const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return tsvg.appendChild(e); };
+el('rect', { x: -0.6, y: -0.5, width: TLW + 1.2, height: 1, fill: '#f1f2f4' });
+const tlMarks = [];
+let run = [];
+TL.items.forEach((it, i) => {
+  if (it.type === 'edit') {
+    tlMarks.push([el('line', { x1: it.x, x2: it.x, y1: -1.5, y2: 0.9, stroke: EDIT, 'stroke-width': .25, opacity: .85 }), it.x]);
+    run.push(it);
+    if (TL.items[i + 1]?.type !== 'edit') {
+      const v = e => 'v' + parseInt(e.version.slice(1)), a = v(run[0]), b = v(run[run.length - 1]);
+      const tx = el('text', { x: (run[0].x + run[run.length - 1].x) / 2, y: -1.5 - 3 * K / TU, 'font-size': 11 * K / TU, 'text-anchor': 'middle', fill: EDIT });
+      tx.textContent = a === b ? a : `${a}–${b.slice(1)}`;
+      tlMarks.push([tx, run[0].x]);
+      run = [];
+    }
+    return;
+  }
+  const c = it.score === 1 ? WIN : LOSS;
+  tlMarks.push([it.learned ? el('rect', { x: it.x - .4485, y: -.4485, width: .897, height: .897, fill: c })
+                           : el('circle', { cx: it.x, cy: 0, r: .4485, fill: c }), it.x]);
+});
+el('line', { x1: -0.6, x2: TLW + 0.6, y1: .95, y2: .95, stroke: '#ccc', 'stroke-width': 1 / TU });
+for (const [x, n] of TL.ticks) {
+  el('line', { x1: x, x2: x, y1: .95, y2: .95 + 4 * K / TU, stroke: '#000', 'stroke-width': 1 / TU });
+  el('text', { x, y: 1.6 + fs * .85, 'font-size': fs, 'text-anchor': 'middle' }).textContent = n;
+}
+el('text', { x: TLW / 2, y: 1.6 + fs * 2.3, 'font-size': fs, 'text-anchor': 'middle', fill: '#444' }).textContent = 'Gameplay';
+const playX = Object.fromEntries(TL.items.filter(it => it.type === 'play').map(it => [it.n, it.x]));
+
+// ---------------------------------------------------------------- file arrows
+// An arrow flies from the thing the agent made into the Files box, landing when the file appears there.
+// [story time the file lands, start [x, y], curve control [x, y], end [x, y]]
+const FILE_ARROWS = [
+  [17.8, [750, 372], [430, 340], [268, 192]],    // game1.txt -> games
+  [24.6, [1210, 358], [1010, 340], [968, 246]],  // first transcript -> transcripts
+  [28.9, [1735, 368], [1420, 250], [1130, 282]], // notes v2 -> player artifacts
+  [44.8, [752, 372], [770, 320], [780, 258]],    // game19.txt -> games
+  [50.8, [1062, 310], [900, 350], [952, 250]],  // game19 transcripts -> transcripts
+  [56.2, [1735, 368], [1420, 250], [1130, 282]], // notes v16 -> player artifacts
+  [59.8, [1062, 310], [900, 350], [952, 250]],  // replay transcripts -> transcripts
+];
+const fileLayer = $(`<svg width="1920" height="1240" style="position:absolute;left:0;top:0;pointer-events:none"></svg>`);
+const fileArrows = FILE_ARROWS.map(([at, a, c, b]) => {
+  const col = '#8e93a4', ang = Math.atan2(b[1] - c[1], b[0] - c[0]);
+  const e = [b[0] - 12 * Math.cos(ang), b[1] - 12 * Math.sin(ang)];  // stop the line under the arrowhead
+  const g = document.createElementNS(NS, 'g');
+  g.innerHTML = `<path d="M ${a} Q ${c} ${e}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" pathLength="100" stroke-dasharray="100"/>
+    <polygon points="-24,-13 0,0 -24,13" fill="${col}" transform="translate(${b}) rotate(${ang * 180 / Math.PI})"/>`;
+  fileLayer.appendChild(g);
+  return { draw(t) {
+    const v = ease(span(t, at - .55, at)), o = 1 - ease(span(t, at + 1.2, at + 1.6));
+    g.querySelector('path').style.strokeDashoffset = 100 * (1 - v);
+    g.querySelector('polygon').style.opacity = v > .9 ? 1 : 0;
+    g.style.opacity = v > 0 ? o : 0;
+  } };
+});
+
+// ---------------------------------------------------------------- narration bar
+const narr = add(`<div class="narr"></div>`);
+function narrate(t) {
+  let i = -1;
+  NARRATION.forEach((n, j) => { if (n.at <= t) i = j; });
+  const n = NARRATION[i], next = NARRATION[i + 1];
+  if (!n || (n.until != null && t > n.until + .3)) { place(narr, 180, 1062, 1, 0); return; }
+  if (narr.dataset.i !== String(i)) { narr.innerHTML = `<div>${n.text}</div>`; narr.dataset.i = i; }
+  const end = n.until ?? (next ? next.at : Infinity);
+  place(narr, 180, 1062, 1, Math.min(ease(span(t, n.at, n.at + .35)), 1 - ease(span(t, end - .3, end))));
+}
+
+// ---------------------------------------------------------------- timeline
+const { B1, B2, D1a, D1b, D2, D3 } = THOUGHTS;
+const R = DATA.replays;
+// Playback speed per stretch of the story clock: [story start, story end, slow-down factor].
+// 1 = original speed, 1.6 = 60% slower, 0.8 = 25% faster. Stretches must be contiguous.
+const S_INTRO = 0.95, S_BUILD = 1.3, S_WORK = 1.6, S_FAST = 1.0;  // S_FAST: gameplay replays and the timeline
+const SPEED = [
+  [-7.0, 2.4, S_INTRO],   // intro text
+  [2.4, 13.4, S_BUILD],   // workspace appears
+  [13.4, 19.8, S_WORK],   // t=0: thinks, writes game1
+  [19.8, 24.5, S_FAST],   //   player plays game1
+  [24.5, 31.6, S_WORK],   //   writes notes v2
+  [31.6, 38.2, S_FAST],   // fast-forward timeline
+  [38.2, 46.2, S_WORK],   // t=60: thinks, writes game19
+  [46.2, 50.9, S_FAST],   //   player plays game19 (x2)
+  [50.9, 57.6, S_WORK],   //   finds the mistake, edits notes to v16
+  [57.6, 59.7, S_FAST],   //   replays with v16
+  [59.7, 64.5, S_WORK],   // ending
+];
+const SEG = SPEED.map(([a, b, k]) => ({ a, b, k, v0: 0 }));
+SEG.forEach((s, i) => { s.v0 = i ? SEG[i - 1].v0 + (SEG[i - 1].b - SEG[i - 1].a) * SEG[i - 1].k : 0; });
+const storyTime = (v) => { const s = SEG.findLast(s => v >= s.v0) || SEG[0]; return Math.min(s.b, s.a + (v - s.v0) / s.k); };
+const videoTime = (t) => { const s = SEG.find(s => t <= s.b) || SEG[SEG.length - 1]; return s.v0 + (t - s.a) * s.k; };
+const END = videoTime(SPEED[SPEED.length - 1][1]);
+const POSTER = videoTime(INTRO_FADE_OUT - .2);  // poster frame: full intro on screen
+
+function seek(v) {
+  const t = storyTime(v);
+  if (dbg) dbg.textContent = `story ${t.toFixed(1)}  video ${v.toFixed(1)}`;
+  // Setup.
+  frame.querySelector('rect').style.strokeDashoffset = 1000 * (1 - ease(span(t, 3.2, 4.6)));
+  place(frame, 0, 0);
+  place(shelf, 210, 65, 1, ease(span(t, 4.2, 4.8)));
+  const rm = ease(span(t, 3.4, 4.6));
+  place(robot, lerp(792, 220, rm), lerp(250, 420, rm), lerp(1.6, 1.0, rm), ease(span(t, 2.8, 3.4)));
+
+  // Intro text alone in the middle of the stage, gone before the workspace appears.
+  const io = 1 - ease(span(t, INTRO_FADE_OUT, INTRO_FADE_OUT + .6));
+  intro.querySelectorAll(':scope > span').forEach((e, i) => { e.style.opacity = ease(span(t, INTRO[i].at, INTRO[i].at + .5)); });
+  place(intro, 210, 600 - intro.offsetHeight / 2, 1, io);
+  const caps = [[32.4, 37.4, FAST_FORWARD_CAPTION]];
+  const c = caps.find(([a, b]) => t >= a && t < b + .4);
+  if (c) {
+    caption.textContent = c[2];
+    caption.style.whiteSpace = 'pre-line';
+    const o = Math.min(ease(span(t, c[0], c[0] + .4)), 1 - ease(span(t, c[1], c[1] + .4)));
+    const y = c[0] > 59 ? 950 : c[0] > 30 ? 540 : 780;
+    const x = c[0] > 59 ? 600 : 110;
+    caption.style.width = c[0] > 59 ? '1270px' : '1700px';
+    caption.style.fontSize = c[0] > 59 ? '40px' : '50px';
+    place(caption, x, y, 1, o);
+  } else place(caption, 0, 0, 1, 0);
+
+  // Goal and tools: big in the middle, then shrink into the corner.
+  const hud = ease(span(t, 12.4, 13.4));
+  type(goal.querySelector('.gtext'), GOAL, t, 6.0, 45);
+  const gs = lerp(1.7, 1, hud);
+  popIn(goal, lerp(520, 1340, hud) - (gs - 1) * 0, lerp(380, 70, hud), 5.4, t);
+  if (t > 5.9) place(goal, lerp(560, 1340, hud), lerp(370, 70, hud), gs, 1);
+  place(toolsLbl, lerp(560, 1340, hud), lerp(620, 222, hud), gs, ease(span(t, 8.0, 8.4)));
+  tools.forEach((e, i) => {
+    const x = lerp(560 + toolX[i] * 1.7, 1340 + toolX[i], hud), y = lerp(612, 216, hud);
+    const v = span(t, 8.2 + i * .25, 8.7 + i * .25), s = (v > 0 ? pop(v) : 0) * gs * .9;
+    const used = { WRITE: [16.6, 27.8, 43.6], PLAY: [18.4, 45.0, 57.0], EDIT: [54.8] }[TOOLS[i]] || [];
+    const pulse = Math.max(0, ...used.map(u => Math.sin(Math.PI * span(t, u, u + .6))));
+    place(e, x, y, s * (1 + .25 * pulse), v > 0 ? 1 : 0);
+  });
+
+  // Time axis.
+  const n = Math.round(lerp(0, 60, ease(span(t, 32.4, 37.4))));
+  timeLbl.textContent = `t=${n}`;
+  place(timeLbl, 15, 475, 1, ease(span(t, 13.0, 13.6)));
+
+  // Row geometry.
+  const X = { bub1: 190, a1: 470, game: 630, a2: 890, card: 1050, a3: 1475, docs: 1650 }, Y = 505;
+  const sceneB = t < 31.6, out = 1 - ease(span(t, 31.0, 31.8));
+
+  // Scene B (t = 0) and scene D (t = 60) share the row.
+  let o;
+  if (sceneB) {
+    o = out;
+    place(bubble1, X.bub1, 640, 1, ease(span(t, 13.4, 13.8)) * o);
+    type(bubble1, B1, t, 13.6);
+    place(a1, X.a1, Y, 1, o); drawArrow(a1, 16.7, t); a1.style.opacity = t > 16.7 ? o : 0;
+    above(p1, X.a1, 140, 16.5, t, o);
+    popIn(game, X.game, Y - 120, 17.1, t, o);
+    game.querySelector('.gname').textContent = 'game1.txt';
+    show(game.querySelector('canvas'), R[1], 0, 240);
+    place(a2, X.a2, Y, 1, o); drawArrow(a2, 18.5, t); a2.style.opacity = t > 18.5 ? o : 0;
+    above(p2, X.a2, 130, 18.3, t, o);
+    popIn(cardA, X.card, Y - 140, 19.0, t, o);
+    const done = playCard(cardA, R[1], t, 19.8);
+    stamp(cardA, false, done ? 1 : 0);
+    place(bubble2, 1465, Y + 20 - 150, 1, Math.min(ease(span(t, 24.8, 25.2)), 1 - ease(span(t, 27.5, 27.8))) * o);
+    type(bubble2, B2, t, 25.0);
+    place(a3, X.a3, Y, 1, o); drawArrow(a3, 28.0, t); a3.style.opacity = t > 28.0 ? o : 0;
+    above(p3, X.a3, 130, 27.8, t, o);
+    popIn(docs, X.docs, Y - 130, 28.4, t, o);
+    docs.querySelector('.vold').textContent = '';
+    docs.querySelector('.vnew').textContent = 'v2';
+    [a1p, p2x, p3e, branch, ghost, cardB, cardC].forEach(e => place(e, 0, 0, 1, 0));
+  } else {
+    o = 1;
+    place(bubble1, X.bub1, 640, 1, Math.min(ease(span(t, 38.4, 38.8)), t < 60.1 ? 1 - ease(span(t, 59.8, 60.1)) : ease(span(t, 60.1, 60.3))));
+    type(bubble1, t < 41.2 ? D1a : D1a + D1b.slice(0, Math.max(0, Math.floor((t - 41.2) * 40))), t, 38.6);
+    if (t >= 41.2) bubble1.textContent = D1a + D1b.slice(0, Math.max(0, Math.floor((t - 41.2) * 40)));
+    if (t >= 60.1) type(bubble1, D3, t, 60.2);
+    branch.style.clipPath = `inset(0 0 ${100 * (1 - ease(span(t, 40.0, 40.8)))}% 0)`;
+    place(branch, X.a1 + 10, Y + 25, 1, t > 40 ? 1 : 0);
+    popIn(ghost, X.a1 + 190, Y + 250, 40.6, t, .75);
+    place(a1, 0, 0, 1, 0);
+    place(a1p, X.a1, Y, 1, 1); drawArrow(a1p, 43.8, t);
+    above(p1, X.a1, 140, 43.6, t);
+    popIn(game, X.game, Y - 120, 44.2, t);
+    game.querySelector('.gname').textContent = 'game19.txt';
+    show(game.querySelector('canvas'), R[61], 0, 240);
+    place(a2, X.a2, Y, 1, 1); drawArrow(a2, t < 57.0 ? 45.2 : 57.0, t);
+    place(p2, 0, 0, 1, 0);
+    above(p2x, X.a2, 130, 45.0, t);
+    if (t > 57.0) place(p2x, X.a2 + 65 - p2x.offsetWidth / 2, 435, 1 + .2 * Math.sin(Math.PI * span(t, 57.0, 57.6)), 1);
+    // game19 alone and with v15 (plays 61, 62); then the teacher replays it twice with v16 (plays 63, 64).
+    popIn(cardB, X.card, 300, 45.7, t);
+    popIn(cardC, X.card, 625, 45.9, t);
+    place(cardA, 0, 0, 1, 0);
+    const fade = 1 - ease(span(t, 56.6, 56.9));
+    if (t < 57.0) {
+      setIcon(cardB, 'none'); setIcon(cardC, 'v15');
+      stamp(cardB, false, playCard(cardB, R[61], t, 46.2) ? fade : 0);
+      stamp(cardC, false, playCard(cardC, R[62], t, 46.2) ? fade : 0);
+    } else {
+      setIcon(cardB, 'v16'); setIcon(cardC, 'v16');
+      stamp(cardB, true, playCard(cardB, R[63], t, 57.6) ? 1 : 0);
+      stamp(cardC, true, playCard(cardC, R[64], t, 57.6) ? 1 : 0);
+    }
+    place(bubble2, 1465, Y + 20 - 150, 1, Math.min(ease(span(t, 51.0, 51.4)), 1 - ease(span(t, 54.5, 54.8))));
+    type(bubble2, D2, t, 51.2);
+    place(a3, X.a3, Y, 1, 1); drawArrow(a3, 55.0, t);
+    place(p3, 0, 0, 1, 0);
+    above(p3e, X.a3, 130, 54.8, t);
+    popIn(docs, X.docs, Y - 130, 55.2, t);
+    const vo = docs.querySelector('.vold'), vn = docs.querySelector('.vnew');
+    vo.textContent = 'v15';
+    vo.style.textDecoration = t > 55.9 ? 'line-through #bf1e2d 4px' : 'none';
+    vo.style.opacity = t > 55.9 ? .55 : 1;
+    vn.textContent = t > 56.2 ? ' v16' : '';
+  }
+
+  // Shelf contents.
+  const shelfGames = t < 31.6 ? (t > 17.8 ? 1 : 0)
+    : t < 38 ? Math.max(1, ...DATA.plays.slice(0, n).map(p => +p.game.slice(1)))
+    : (t > 44.8 ? 19 : 18);
+  thumbs.forEach((e, i) => {
+    const col = i % 10, row = Math.floor(i / 10);
+    const appear = i === 0 ? 17.8 : i === 18 ? 44.8 : 0;
+    const s = i < shelfGames ? (appear ? pop(span(t, appear, appear + .4)) : 1) : 0;
+    place(e, 240 + col * 64 + 28 * (1 - s), 128 + row * 66 + 28 * (1 - s), s, s > 0 ? 1 : 0);
+  });
+  const tn = t < 31.6 ? (t > 24.6 ? 1 : 0) : t < 38 ? n : t < 50.8 ? 60 : t < 59.8 ? 62 : 64;
+  transcripts.querySelector('.tn').textContent = tn ? `×${tn}` : '';
+  place(transcripts, 900, 118, 1, tn ? 1 : 0);
+  const ver = t < 31.6 ? 2 : t < 38 ? Math.max(2, DATA.plays[Math.max(0, n - 1)].v + 1) : t > 56.2 ? 16 : 15;
+  artifacts.querySelector('.av').textContent = `v${ver}`;
+  place(artifacts, 1040, 75, 1, t > 28.9 ? 1 : 0);
+
+  // Fast-forward timeline.
+  const so = Math.min(ease(span(t, 32.0, 32.6)), 1 - ease(span(t, 37.6, 38.2)));
+  place(tl, 260, 660, 1, so);
+  const xr = n ? playX[n] + .7 : -1;
+  tlMarks.forEach(([e, x]) => { e.style.opacity = x <= xr ? 1 : 0; });
+
+  fileArrows.forEach(a => a.draw(t));
+  narrate(t);
+}
+stage.appendChild(fileLayer);
+window.seek = seek;
+window.END = END;
+window.POSTER = POSTER;
+// ?t=<video seconds> shows one frame; ?play=1 plays in real time; ?debug=1 shows the clocks.
+const params = new URLSearchParams(location.search);
+const dbg = params.has('debug') ? add(`<div style="font:24px monospace;color:#999;padding:8px"></div>`) : null;
+if (params.has('play')) {
+  const t0 = performance.now() - 1000 * +(params.get('t') || 0);
+  const tick = () => { const v = (performance.now() - t0) / 1000; seek(Math.min(v, END)); if (v < END) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+} else seek(+(params.get('t') || 0));
+</script>
+</body></html>

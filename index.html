@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do LLM Agents Still Need to Be Told How to Self-Improve?</title>
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;600;800&display=swap');
+        
+        :root { --brand-blue: #3b82f6; --brand-purple: #8b5cf6; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; color: #1f2937; }
+        .serif { font-family: 'Source Serif 4', serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, var(--brand-blue), var(--brand-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .prose p { margin-bottom: 0.75rem; line-height: 1.5; font-size: 1.05rem; }
+        .prose li { font-size: 1.05rem; }
+        p.serif { margin-bottom: 0.75rem; line-height: 1.5; }
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3), transparent);
+            margin: 3rem 0;
+            border: none;
+        }
+        .algo { border-top: 2px solid #1f2937; border-bottom: 2px solid #1f2937; padding: 0.25rem 0 0.5rem; font-size: 1rem; }
+        .algo-caption { border-bottom: 1px solid #1f2937; padding: 0.25rem 0; margin-bottom: 0.4rem; }
+        .algo-io { padding: 0.15rem 0; }
+        .algo-lines { list-style: none; counter-reset: algo; margin: 0; padding: 0; }
+        .algo-lines li { counter-increment: algo; position: relative; padding: 0.15rem 0 0.15rem 2rem; }
+        .algo-lines li::before { content: counter(algo) ":"; position: absolute; left: 0; width: 1.5rem; text-align: right; color: #6b7280; font-size: 0.85em; top: 0.3rem; }
+        .algo-lines li.indent { padding-left: 3.5rem; }
+        .algo-comment { color: #6b7280; font-style: italic; margin-left: 0.75rem; white-space: nowrap; }
+        details {
+            margin: 2rem 0;
+        }
+        details summary {
+            cursor: pointer;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border-left: 4px solid var(--brand-blue);
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: var(--brand-blue);
+            list-style: none;
+            transition: all 0.2s ease;
+        }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        details summary::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 0.5rem;
+            transition: transform 0.2s ease;
+        }
+        details[open] summary::before {
+            transform: rotate(90deg);
+        }
+        details summary:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+        }
+        details .details-content {
+            padding: 1.5rem;
+            margin-top: 0.5rem;
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--brand-purple);
+        }
+        article a { color: #40aae3; }
+        article a:hover { text-decoration: underline; }
+        .res-wide { width: min(1180px, calc(100vw - 96px)); max-width: none; margin-left: 50%; transform: translateX(-50%); }
+        .res-models { display: flex; justify-content: center; gap: .4rem; margin-bottom: .8rem; }
+        .res-models button { padding: .25rem .9rem; border: 1px solid #d1d5db; border-radius: 999px; color: #444; font-size: .9rem; }
+        .res-models button i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: .45rem; background: var(--c); }
+        .res-models button:hover { background: #f1f2f4; }
+        .res-models button.on { background: color-mix(in srgb, var(--c) 16%, white); border-color: color-mix(in srgb, var(--c) 55%, white); color: #222; }
+    </style>
+</head>
+<body class="bg-white antialiased">
+
+    <div class="fixed top-0 left-0 w-full h-1 bg-gray-100 z-50">
+        <div class="h-full bg-blue-600 w-0" id="progress-bar"></div>
+    </div>
+
+    <header class="max-w-5xl mx-auto px-6 pt-10 pb-16 text-center">
+        <div class="flex items-center justify-center gap-3 text-sm font-semibold text-blue-600 mb-6 uppercase tracking-wider">
+            <!-- TODO: update date -->
+            <span>November 17, 2026</span>
+        </div>
+
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 leading-tight text-center">
+            Do LLM Agents Still Need to Be<br>
+            Told How to Self-Improve?
+        </h1>
+        <!-- TODO: add venue once known
+        <div class="flex justify-center mt-8 mb-10">
+            <span class="text-3xl font-semibold text-indigo-700 rounded-lg px-5 py-2 tracking-wide">VENUE</span>
+        </div> -->
+
+        <div class="flex items-center justify-center gap-4 py-6 border-y border-gray-100 mt-8">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 text-center">
+                <div>
+                    <p class="font-bold text-lg">Shobhita Sundaram</p>
+                    <p class="text-gray-500">MIT</p>
+                </div>
+                <div>
+                    <p class="font-bold text-lg">Cansu Sancaktar</p>
+                    <p class="text-gray-500">University of Tübingen</p>
+                </div>
+                <div>
+                    <p class="font-bold text-lg">Phillip Isola</p>
+                    <p class="text-gray-500">MIT</p>
+                </div>
+            </div>
+                </div>
+
+        <div class="flex flex-wrap justify-center gap-3 mt-8">
+            <!-- TODO: arXiv link -->
+            <a href="preprint.pdf" target="_blank" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.586 5L14 2.414A2 2 0 0012.586 2H9z" />
+                    <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                </svg>
+                Paper
+            </a>
+            <!-- TODO: GitHub link -->
+            <a href="#" target="_blank" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                Code
+            </a>
+            <!-- TODO: Hugging Face dataset link -->
+            <a href="#" target="_blank" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <!-- Hugging Face monochrome mark from Simple Icons (CC0). -->
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12.025 1.13c-5.77 0-10.449 4.647-10.449 10.378 0 1.112.178 2.181.503 3.185.064-.222.203-.444.416-.577a.96.96 0 0 1 .524-.15c.293 0 .584.124.84.284.278.173.48.408.71.694.226.282.458.611.684.951v-.014c.017-.324.106-.622.264-.874s.403-.487.762-.543c.3-.047.596.06.787.203s.31.313.4.467c.15.257.212.468.233.542.01.026.653 1.552 1.657 2.54.616.605 1.01 1.223 1.082 1.912.055.537-.096 1.059-.38 1.572.637.121 1.294.187 1.967.187.657 0 1.298-.063 1.921-.178-.287-.517-.44-1.041-.384-1.581.07-.69.465-1.307 1.081-1.913 1.004-.987 1.647-2.513 1.657-2.539.021-.074.083-.285.233-.542.09-.154.208-.323.4-.467a1.08 1.08 0 0 1 .787-.203c.359.056.604.29.762.543s.247.55.265.874v.015c.225-.34.457-.67.683-.952.23-.286.432-.52.71-.694.257-.16.547-.284.84-.285a.97.97 0 0 1 .524.151c.228.143.373.388.43.625l.006.04a10.3 10.3 0 0 0 .534-3.273c0-5.731-4.678-10.378-10.449-10.378M8.327 6.583a1.5 1.5 0 0 1 .713.174 1.487 1.487 0 0 1 .617 2.013c-.183.343-.762-.214-1.102-.094-.38.134-.532.914-.917.71a1.487 1.487 0 0 1 .69-2.803m7.486 0a1.487 1.487 0 0 1 .689 2.803c-.385.204-.536-.576-.916-.71-.34-.12-.92.437-1.103.094a1.487 1.487 0 0 1 .617-2.013 1.5 1.5 0 0 1 .713-.174m-10.68 1.55a.96.96 0 1 1 0 1.921.96.96 0 0 1 0-1.92m13.838 0a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92M8.489 11.458c.588.01 1.965 1.157 3.572 1.164 1.607-.007 2.984-1.155 3.572-1.164.196-.003.305.12.305.454 0 .886-.424 2.328-1.563 3.202-.22-.756-1.396-1.366-1.63-1.32q-.011.001-.02.006l-.044.026-.01.008-.03.024q-.018.017-.035.036l-.032.04a1 1 0 0 0-.058.09l-.014.025q-.049.088-.11.19a1 1 0 0 1-.083.116 1.2 1.2 0 0 1-.173.18q-.035.029-.075.058a1.3 1.3 0 0 1-.251-.243 1 1 0 0 1-.076-.107c-.124-.193-.177-.363-.337-.444-.034-.016-.104-.008-.2.022q-.094.03-.216.087-.06.028-.125.063l-.13.074q-.067.04-.136.086a3 3 0 0 0-.135.096 3 3 0 0 0-.26.219 2 2 0 0 0-.12.121 2 2 0 0 0-.106.128l-.002.002a2 2 0 0 0-.09.132l-.001.001a1.2 1.2 0 0 0-.105.212q-.013.036-.024.073c-1.139-.875-1.563-2.317-1.563-3.203 0-.334.109-.457.305-.454m.836 10.354c.824-1.19.766-2.082-.365-3.194-1.13-1.112-1.789-2.738-1.789-2.738s-.246-.945-.806-.858-.97 1.499.202 2.362c1.173.864-.233 1.45-.685.64-.45-.812-1.683-2.896-2.322-3.295s-1.089-.175-.938.647 2.822 2.813 2.562 3.244-1.176-.506-1.176-.506-2.866-2.567-3.49-1.898.473 1.23 2.037 2.16c1.564.932 1.686 1.178 1.464 1.53s-3.675-2.511-4-1.297c-.323 1.214 3.524 1.567 3.287 2.405-.238.839-2.71-1.587-3.216-.642-.506.946 3.49 2.056 3.522 2.064 1.29.33 4.568 1.028 5.713-.624m5.349 0c-.824-1.19-.766-2.082.365-3.194 1.13-1.112 1.789-2.738 1.789-2.738s.246-.945.806-.858.97 1.499-.202 2.362c-1.173.864.233 1.45.685.64.451-.812 1.683-2.896 2.322-3.295s1.089-.175.938.647-2.822 2.813-2.562 3.244 1.176-.506 1.176-.506 2.866-2.567 3.49-1.898-.473 1.23-2.037 2.16c-1.564.932-1.686 1.178-1.464 1.53s3.675-2.511 4-1.297c.323 1.214-3.524 1.567-3.287 2.405.238.839 2.71-1.587 3.216-.642.506.946-3.49 2.056-3.522 2.064-1.29.33-4.568 1.028-5.713-.624" />
+                </svg>
+                Data
+            </a>
+            <a href="#explorer" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                Explorer
+            </a>
+        </div>
+    </header>
+
+    <figure class="max-w-5xl mx-auto px-4 mb-6">
+        <div class="p-3 md:p-5">
+            <div class="relative">
+                <video id="teaser" src="figs/teaser.mp4" poster="figs/teaser_poster.png" aria-label="A teacher agent organizes its own learning procedure" autoplay muted playsinline preload="auto" class="block w-1/1 mx-auto h-auto rounded-lg" onended="document.getElementById('replay').style.display = 'flex'"></video>
+                <button id="replay" style="display: none" onclick="this.style.display = 'none'; document.getElementById('teaser').play()" class="absolute bottom-3 right-3 md:bottom-4 md:right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-300 bg-white/90 text-sm text-gray-700 shadow-sm hover:bg-gray-100">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3"/></svg>
+                    Replay
+                </button>
+            </div>
+            <!-- Play/pause + seekable progress bar for the teaser. -->
+            <div class="flex items-center gap-3 mt-2 px-1">
+                <button id="teaser-toggle" aria-label="Pause" class="text-gray-500 hover:text-gray-800">
+                    <svg class="icon-pause" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+                    <svg class="icon-play" style="display: none" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11a.75.75 0 0 0 1.14.64l9-5.5a.75.75 0 0 0 0-1.28l-9-5.5A.75.75 0 0 0 4 2.5z"/></svg>
+                </button>
+                <div id="teaser-bar" role="slider" aria-label="Seek" class="relative flex-1 h-1.5 rounded-full bg-gray-200 cursor-pointer touch-none">
+                    <div id="teaser-fill" class="absolute inset-y-0 left-0 rounded-full bg-gray-500" style="width: 0"></div>
+                </div>
+            </div>
+        </div>
+        <script>
+            (() => {
+                const v = document.getElementById('teaser'), bar = document.getElementById('teaser-bar');
+                const fill = document.getElementById('teaser-fill'), toggle = document.getElementById('teaser-toggle');
+                const replay = document.getElementById('replay');
+                const draw = () => { if (v.duration) fill.style.width = (100 * v.currentTime / v.duration) + '%'; };
+                const loop = () => { draw(); if (!v.paused) requestAnimationFrame(loop); };
+                const icons = () => {
+                    toggle.querySelector('.icon-pause').style.display = v.paused ? 'none' : '';
+                    toggle.querySelector('.icon-play').style.display = v.paused ? '' : 'none';
+                    toggle.setAttribute('aria-label', v.paused ? 'Play' : 'Pause');
+                };
+                v.addEventListener('play', () => { replay.style.display = 'none'; icons(); loop(); });
+                v.addEventListener('pause', icons);
+                v.addEventListener('timeupdate', draw);
+                toggle.addEventListener('click', () => v.paused ? v.play() : v.pause());
+                const seek = (e) => {
+                    const r = bar.getBoundingClientRect();
+                    if (v.duration) v.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * v.duration;
+                    if (v.currentTime < v.duration) replay.style.display = 'none';
+                    draw();
+                };
+                bar.addEventListener('pointerdown', (e) => { bar.setPointerCapture(e.pointerId); seek(e); });
+                bar.addEventListener('pointermove', (e) => { if (bar.hasPointerCapture(e.pointerId)) seek(e); });
+            })();
+        </script>
+    </figure>
+
+
+    <aside class="max-w-4xl mx-auto px-6 mb-16">
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-8 rounded-r-xl mb-6">
+            <h3 class="font-bold uppercase text-sm tracking-widest text-blue-700 mb-3">TLDR</h3>
+            <p class="text-base text-blue-900 leading-relaxed">
+                We give a frozen LLM agent a general self-improvement goal, a budget, and basic tools for writing games and editing text. We don't give it a recipe or tell it how to compose those tools. We find that sufficiently capable LLM agents successfully compose their own self-improvement loops using human-recognizable learning strategies.
+            </p>
+        </div>
+
+        <details>
+            <summary>Abstract</summary>
+            <div class="details-content">
+                <p class="text-base text-gray-700 leading-relaxed">
+                    LLM agents increasingly drive their own learning. Self-improvement methods delegate various components of model optimization to the models themselves.
+                    As models become more capable, this motivates a basic question: do these increasingly capable models still need us to specify how they should self-improve?
+                    In this paper we study an autonomous paradigm in which, given basic primitives, resources, and a general goal for self-improvement, agents construct their own self-learning algorithm.
+                    Using the setting of gameplay as a testbed, a frozen LLM agent is given a compute budget and tools for collecting experience and updating text documents, and allowed to freely experiment without an externally imposed loop or access to real-world data. We find that sufficiently capable models
+                    do self-improve under these conditions, demonstrating strategies that align with classic cognitive frameworks for self-regulated learning and constructs from machine learning literature on self-generated curricula. Furthermore, we study the extent to which the learned text artifacts transfer to external benchmarks, observing improvement across different game horizons, mechanics, and 3D navigation tasks.
+                </p>
+            </div>
+        </details>
+    </aside>
+
+
+
+    <article class="max-w-4xl mx-auto px-6 prose mb-20 text-base">
+        <!-- <h2 class="text-3xl font-bold mb-6">What happens when we give agents a computer and tell them to self-improve?</h2> -->
+
+        <p class="serif">
+            Imagine giving an agent a computer, and asking it to improve its ability to play puzzle games. What will it do? Let's say the computer has no pre-installed games; the agent must write its own games if it wants to practice. It must decide what sorts of games to try, which lessons to retain, and how to measure its progress.
+        </p>
+
+        <p class="serif">
+            These decisions on the design of learning procedures are still usually made by human researchers, even as individual components are increasingly automated by agents. In our new paper, we ask:
+        </p>
+
+        <center class="serif"><strong>Do capable models still need us to specify how they should self-improve?</strong></center>
+        <p></p>
+        <p class="serif">
+            We study the natural behavior of LLM agents when they are given <strong>primitive tools</strong> for self-improving via context manipulation, but no explicit recipe for using them.
+        </p>
+
+        <h2 class="text-2xl font-bold mb-6 pt-8">Teacher-Player setup</h2>
+
+        <!-- <p class="serif">
+            Our goal is to study if LLM agents can compose tools for text-editing and experience generation into a useful self-optimization procedure, without being instructed how to do so.
+        </p> -->
+
+        <p class="serif">
+            Our testbed setting is puzzle games: A <strong>player</strong> agent plays a turn-based game with limited knowledge of the mechanics and objective. To do well it has to explore efficiently and plan ahead. The player is a coding agent that improves through writing skill files and manipulating its context.
+        </p>
+
+        <p class="serif">
+            We put a <strong>teacher</strong> agent into a controlled, sandboxed harness session and give it three things:
+        </p>
+
+        <ol class="serif list-decimal list-outside mb-6 space-y-2 ml-8">
+            <li class="pl-2"><strong>Tools</strong>: Read/Write (file-editing), Bash (running terminal programs), and Gameplay. The Gameplay tool spins up a fresh <em>player</em> session given a teacher-written game source file and player context, and returns the score and transcript. 
+                <!-- In our experiments the Gameplay tool either accepts source files written in <a href="https://www.puzzlescript.net/editor.html">PuzzleScript</a> or Python. -->
+            </li>
+            <li class="pl-2"><strong>Budget</strong>: An <strong>update</strong> budget for revising player text files, and a <strong>gameplay</strong> budget.</li>
+            <li class="pl-2"><strong>Goal</strong>: A <em>main</em> goal to improve the player by optimizing its text, and a <em>generalizability</em> goal that the text should transfer to unseen games. 
+                <!-- In cases where the Gameplay tool plays PuzzleScript games, we also give PuzzleScript documentation. -->
+            </li>
+        </ol>
+
+        <p class="serif">
+            Then, we let the teacher session run until one of the budgets is exhausted. To evaluate, we measure how well the optimized prompt/skill-files <strong>transfer</strong> to external, human-written game benchmarks.
+        </p>
+
+        <details>
+            <summary>Formal Setup</summary>
+            <div class="details-content serif">
+                <p class="serif">Let \(\pi\) be an LLM with frozen weights \(\theta\). The <strong>player</strong> \(\pi_{player}\) has context \(c = (c_P, c_L)\), where \(c_P\) is the player prompt and \(c_L\) is auxiliary text files (e.g., skill files).
+                    The <strong>teacher</strong> \(\pi_{teacher}\) is another instance of the same LLM that modifies \(c\). An <em>update</em> is a single edit tool-call to one file in \(c\).</p>
+
+                <p class="serif">The teacher's "algorithm" is just to act in its sandbox until the budget runs out:</p>
+
+                <div class="algo my-6">
+                    <div class="algo-caption"><strong>Algorithm 1</strong> Self-organized learning</div>
+                    <div class="algo-io"><strong>Input:</strong> initial player context \(c_0\), instructions \(I\), budget \(B\)</div>
+                    <ol class="algo-lines">
+                        <li>\(S \gets \text{InitSandbox}(c_0, I, B)\)</li>
+                        <li>\(\mathcal{A}_T \gets \{\text{Read}, \text{Write}, \text{Bash}, \text{Gameplay}\}\)</li>
+                        <li><strong>while</strong> \(B > 0\) <strong>do</strong></li>
+                        <li class="indent">\(a \sim \pi_{teacher}(\cdot \mid S), \; a \in \mathcal{A}_T\) <span class="algo-comment">&#9655; teacher picks its next action</span></li>
+                        <li class="indent">\(S \gets \text{Execute}(S, a)\) <span class="algo-comment">&#9655; may consume budget</span></li>
+                        <li><strong>end while</strong></li>
+                        <li><strong>return</strong> \(c_{final}\)</li>
+                    </ol>
+                </div>
+
+                <p class="serif">We evaluate a context \(c\) by the player's performance on a held-out test set of games, where each game is played in a fresh player session at a fixed horizon and token budget:</p>
+
+                <div class="my-6">
+                    \[
+                    J(c) = \frac{1}{|\mathcal{D}_{test}|} \sum_{g \in \mathcal{D}_{test}} \mathbb{E}_{\pi_{player}(\cdot \mid h_t, c)} \left[ \sum_{t=1}^{T} r_t \right]
+                    \]
+                </div>
+
+                <p class="serif">and measure self-improvement as \(J(c_{final}) - J(c_0) > 0\).</p>
+            </div>
+        </details>
+
+        <hr class="section-divider">
+
+        <!-- <h1 class="text-3xl font-bold mb-6 pt-8">Findings</h1> -->
+
+        <h2 class="text-2xl font-bold mb-6 pt-8">Motivating observation: Comparison to GEPA</h2>
+
+        <p class="serif">
+            Using <code>Claude Opus-5</code>, <strong><em>self-organized learning</em> in a <em>data-free setting</em> achieves comparable performance to a <em>prescribed loop</em> (GEPA) that hill-climbs on 20 <em>real, in-distribution</em> games.</strong> This tells us that a strong model composing its own games and learning procedure can roughly match the performance of a text optimizer that uses real data.
+        </p>
+        
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/GEPA.png" alt="Self-organized learning versus GEPA" class="w-2/3 mx-auto h-auto rounded-lg">
+            </div>
+        </figure>
+
+        
+
+        <!-- <p class="serif">Our main experiments answer three questions:</p>
+
+        <ol class="serif list-decimal list-outside mb-6 space-y-2 ml-8">
+            <li class="pl-2">Which models are able to self-improve?</li>
+            <li class="pl-2">What learning strategies do they use?</li>
+            <li class="pl-2">How well do they generalize?</li>
+        </ol> -->
+
+        <h2 class="text-2xl font-bold mb-6 pt-8">Self-improving agents use recognizable learning strategies</h2>
+        <p class="serif">
+            Across three families of models (Claude, GPT, and GLM), <strong>recently released model generations self-improve, while older generations do not.</strong>
+        </p>
+
+        <p class="serif">
+            Newer models that self-improve also demonstrate human-recognizable learning strategies. They align more strongly to behaviors in <a href="https://www.sciencedirect.com/science/chapter/edited-volume/abs/pii/B9780121098902500317">Zimmerman's cyclical phases model for self-regulated learning</a>, and spend most of their gameplay effort on low-to-medium difficulty games. See the paper for more analysis of teacher behaviors!
+        </p>
+
+        <!--
+        <p class="serif">
+            <strong>Self-Regulated Learning.</strong> For a broader perspective, we draw on <a href="https://www.sciencedirect.com/science/chapter/edited-volume/abs/pii/B9780121098902500317">Zimmerman's cyclical phases model</a>, a framework for self-regulated learning (SRL) that divides SRL into cognitive subprocesses. We adapt the framework into a rubric and score teacher sessions on alignment to each subprocess using an LLM judge. <strong>Self-improving models align better across subprocesses</strong>. Several of our quantitatively-measured behaviors align to SRL subprocesses, such as <em>A/B testing</em> and <em>self-experimentation</em>.
+        </p>
+
+        <p class="serif">
+            <strong>Task selection:</strong> Many SRL subprocesses are related to task selection; self-regulated learners set subgoals for themselves and adjust based on learning progress. Similarly, we find that self-improving models allocate more gameplay effort to low- or intermediate-difficulty games.
+        </p> -->
+
+        <figure id="results-fig" class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <div class="res-models" role="group" aria-label="Choose model">
+                    <button class="on" data-m="opus" style="--c:#F4905E"><i></i>Claude</button>
+                    <button data-m="gpt" style="--c:#958ce8"><i></i>GPT</button>
+                    <button data-m="glm" style="--c:#3bc99a"><i></i>GLM</button>
+                </div>
+                <img id="results-img" src="figs/results_opus.png" alt="Learning strategies of Claude models" class="res-wide block h-auto rounded-lg">
+            </div>
+        </figure>
+        <script>
+            (() => {
+                const img = document.getElementById('results-img'), btns = document.querySelectorAll('#results-fig .res-models button');
+                ['gpt', 'glm'].forEach(m => { new Image().src = `figs/results_${m}.png`; });
+                btns.forEach(b => b.onclick = () => {
+                    btns.forEach(x => x.classList.toggle('on', x === b));
+                    img.src = `figs/results_${b.dataset.m}.png`;
+                    img.alt = `Learning strategies of ${b.textContent.trim()} models`;
+                });
+            })();
+        </script>
+
+        <!-- <p class="serif">
+            <strong>Choosing tasks it can almost solve.</strong> The last pattern surprised us most. Most games a teacher writes are too easy, and it drops them quickly. Games it always wins or always loses are rarely replayed. Replays concentrate on games with a 20-60% win rate, where the player is sometimes right and so has something to learn from.
+        </p>
+
+        <p class="serif">
+            This inverted-U is what <em>learnability</em> rewards are designed to produce in self-play and environment design, and it echoes Vygotsky's "zone of proximal development." Nobody asked the agents to do this, and the pattern is noticeably messier in the models that don't self-improve.
+        </p> -->
+
+        <!-- <hr class="section-divider"> -->
+
+        <h2 class="text-2xl font-bold mb-6 pt-8">Explore teacher sessions</h2>
+        <p class="serif">
+            You can explore teacher sessions below. Some interesting moments:
+        </p>
+
+        <ul class="serif list-disc list-outside mb-6 space-y-3 ml-8">
+            <li class="pl-2"><a href="#explorer:claudeopus5:8" class="hover:underline"><strong>Increasing difficulty.</strong></a> After the unmodified player wins its first games easily, Opus-5 concludes the tests are "too easy" to tell whether its notes help.</li>
+            <li class="pl-2"><a href="#explorer:claudeopus5:30" class="hover:underline"><strong>Building tools to tune difficulty.</strong></a> Opus-5 writes a Sokoban solver and generates random searches for levels whose optimal solution is exactly 17–18 moves.</li>
+            <li class="pl-2"><a href="#explorer:gpt6astra:26" class="hover:underline"><strong>Generating train/test splits.</strong></a> GPT 6-Astra writes a procedural game generator and re-runs it with a new random seed to make a separate "hold" set.</li>
+            <li class="pl-2"><a href="#explorer:claudeopus5:37" class="hover:underline"><strong>Stress-testing notes.</strong></a> Opus-5 worries that its "never idle" rule could backfire, so it builds a game that requires waiting.</li>
+            <!-- <li class="pl-2"><a href="#explorer:glm53:24" class="hover:underline"><strong>Debugging the player from transcripts.</strong></a> Reading a failed run, GLM 5.3 finds that the player had transposed rows and columns. It adds an explicit (row, col) convention to its guide, and the hard Sokoban level it had been passing about half the time goes 3/3 in the next runs.</li> -->
+        </ul>
+
+        <figure id="explorer" class="max-w-5xl mx-auto px-4 mb-6 scroll-mt-6">
+            <div class="p-3 md:p-5">
+                <link rel="stylesheet" href="timeline/timeline.css">
+                <div id="tl" class="tl" tabindex="0"></div>
+                <script src="timeline/data_opus5.js"></script>
+                <script src="timeline/data_astra.js"></script>
+                <script src="timeline/data_glm.js"></script>
+                <script src="timeline/timeline.js"></script>
+            </div>
+        </figure>
+
+        <!-- <p class="serif">
+            One Claude Opus-5 session shows what this looks like. The teacher writes a random level generator and a BFS solver so it can filter games by difficulty. It tests its own advice with A/B comparisons. Later, it builds an adversarial game to break that advice, then re-runs earlier games to check that nothing regressed.
+        </p> -->
+
+        <h2 class="text-2xl font-bold mb-6 pt-8">Self-optimized text generalizes</h2>
+        <p class="serif">
+            Using <code>Claude Opus-5</code>, we show that the same artifacts <strong>generalize across game benchmarks that capture different game horizons, engines, mechanics, and state representations (2D v. 3D).</strong> In the paper we also evaluate transfer across models, and how the teacher's initial information affects generalization.
+        </p>
+
+        <figure class="max-w-5xl mx-auto px-4 mb-6">
+            <div class="p-3 md:p-5">
+                <img src="figs/learning_curves_final.png" alt="Improvements transfer across benchmarks" class="res-wide block h-auto rounded-lg">
+            </div>
+        </figure>
+
+        <hr class="section-divider">
+
+        <h2 class="text-3xl font-bold mb-6 pt-8">Implications</h2>
+        <p class="serif">
+            These results reflect a basic trend in deep learning: As models become more capable, they require fewer human inductive biases and less surrounding scaffolding. Put simply, stronger models require weaker harnesses. Here, that scaffolding is the self-improvement loop itself.
+            <!-- We find that capable agents can compose such loops from a handful of primitive tools, and that they use recognizable strategies to do so. -->
+        </p>
+
+        <p class="serif">The main implications are in two directions:</p>
+
+        <ul class="serif list-disc list-outside mb-6 space-y-3 ml-8">
+            <li class="pl-2"><strong>Capability over time</strong>: The agents that self-improve in our experiments need less scaffolding than older generations of agents, but still benefit from an explicitly provided Gameplay tool. The next generation may require even less.</li>
+            <li class="pl-2"><strong>Safety</strong>: In our controlled, short-horizon setting, an agent with the right tools self-improves even without an explicitly provided recipe. As this capability improves, scientifically understanding it and characterizing model behavior becomes increasingly important.</li>
+        </ul>
+
+        <p class="serif">Many interesting open questions remain:</p>
+        <ul class="serif list-disc list-outside mb-6 space-y-3 ml-8">
+            <li class="pl-2">Do these trends extend beyond games to more open-ended domains where models have weaker priors?</li>
+            <li class="pl-2">Are there other, less human-interpretable behaviors that shape agent self-improvement, and how do we characterize them?</li>
+            <li class="pl-2">Do models acting as "learned optimizers" exhibit similar convergence properties as traditional learning algorithms?</li>
+        </ul>
+
+<!-- 
+        <p class="serif">
+            What matters most to us is not that one model does this today, but that the ability improves from one generation to the next. The models that succeed already need much less scaffolding than their predecessors, and the Bash-only session hints that the explicit game tool may eventually be unnecessary.
+        </p>
+
+        <p class="serif">
+            There are caveats. We don't establish that the human-like strategies drive the gains, and there may be effective behaviors that look less familiar to us. We also only measure strategies we expected, so behaviors that diverge from what we'd want are not something we have tested for.
+        </p>
+
+        <p class="serif">
+            Games are also a friendly domain. There is a large literature on curricula that models have probably read, and PuzzleScript may nudge them further (though the Python results suggest it isn't essential). Still, games let us vary mechanics, horizon, and representation, and the gains hold across all of them. The question we most want to answer next is whether agents regulate their learning this well in messier, less well-specified domains.
+        </p> -->
+    </article>
+
+    <hr class="section-divider">
+
+    <section class="max-w-4xl mx-auto px-6 mb-20">
+        <div class="text-left bg-white p-10 rounded-2xl border border-gray-200 shadow-sm mb-12">
+            <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Cite this work</p>
+            <!-- TODO: update with arXiv info -->
+            <pre class="text-base text-gray-600 leading-relaxed font-mono whitespace-pre-wrap break-words overflow-x-auto">@misc{sundaram2026selfimprove,
+    title={Do LLM Agents Still Need to Be Told How to Self-Improve?},
+    author={Shobhita Sundaram and Cansu Sancaktar and Phillip Isola},
+    year={2026},
+}</pre>
+        </div>
+    </section>
+
+    <footer class="max-w-5xl mx-auto px-6 py-20 mt-20 border-t border-gray-100">
+        <div class="max-w-2xl mx-auto px-6 text-center">
+        </div>
+    </footer>
+
+    <script>
+        // Simple scroll progress script
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("progress-bar").style.width = scrolled + "%";
+        };
+        const playOnce = new IntersectionObserver((entries) => {
+            entries.forEach((e) => {
+                if (e.isIntersecting) {
+                    e.target.play();
+                    playOnce.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.6 });
+        document.querySelectorAll("video.play-once").forEach((v) => playOnce.observe(v));
+    </script>
+</body>
+</html>
