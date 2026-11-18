@@ -16,8 +16,11 @@ LLM agents increasingly drive their own learning. Self-improvement methods deleg
 
 ## Setup
 
-Requires git, node (>= 12; the `mazebench` benchmark needs >= 20), npm, Python >= 3.10, and a
-container runtime: Singularity/Apptainer or Docker (Linux, or Docker Desktop on macOS).
+Requirements: 
+- node (>= 12; >= 20 for `mazebench` evals)
+- npm
+- Python >= 3.10
+- Singularity/Apptainer or Docker
 
     ./setup.sh          # game engines, the agent containers, pip requirements
     ./download.sh       # the benchmarks, into data/benchmarks/
