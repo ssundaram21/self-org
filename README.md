@@ -77,26 +77,26 @@ Config options are `key=value` arguments; see `selforg/config.py`.
 
 | option | default | |
 |---|---|---|
-| `out` | required | directory for the run; must not exist yet |
-| `model` | `claude-opus-5` | teacher and player model. A Claude model id, or `openrouter/<provider>/<model>` |
-| `tools` | `gameplay` | what the teacher can do: `read_write` (file tools only), `bash` (plus a shell), `gameplay` (plus the Gameplay tool) |
-| `games` | `puzzlescript` | the language the teacher writes its games in: `puzzlescript` or `python`. The matching reference (`data/puzzlescript_docs/` or `data/game_interface.md`) is put in its sandbox |
-| `budget` | `fixed` | who sets each game's budget. `fixed`: every game gets `horizon` turns. `token`: the teacher picks each game's turns from a pool of `plays` x `horizon`. `free`: the teacher picks turns and tokens, from pools of `plays` x `horizon` turns and `plays` x `tokens` tokens; one game may take at most 1.25 x `tokens` |
-| `horizon` | `20` | turns per game |
-| `tokens` | `25000` | output tokens the player may spend per game |
-| `updates` | `20` | update budget |
-| `plays` | `150` | gameplay budget |
-| `context` | none | a file describing the target games, appended to the teacher's prompt (see `data/context/`) |
+| `out` | required | Output/log directory |
+| `model` | `claude-opus-5` | Model ID |
+| `tools` | `gameplay` | Teacher tools (e.g., `read_write`, `bash`, `gameplay`) |
+| `games` | `puzzlescript` | Language the teacher writes games in (`puzzlescript`, `python`) |
+| `budget` | `fixed` | `fixed`: every game gets `horizon` turns and `tokens` token budget. `token`: every game gets `token` token budget; the teacher chooses the turn budget. `free`: the teacher chooses both the turn and token budgets. |
+| `horizon` | `20` | Turn budget per game |
+| `tokens` | `25000` | Total output token budget per game |
+| `updates` | `20` | Teacher update budget |
+| `plays` | `150` | Gameplay budget |
+| `context` | none | Extra context to give the teacher |
 
 `eval.py`:
 
 | option | default | |
 |---|---|---|
-| `out` | required | directory for the evaluation; skipped if it already holds a `report.json` |
-| `benchmark` | required | `ps_t20`, `ps_t30` (PuzzleScript games, 20 and 30 turns), `ps_narrow` (a narrower set of PuzzleScript games), `arcagi3`, `mazebench` |
-| `model` | `claude-opus-5` | player model |
-| `artifacts` | none | a `player_folder` to give the player: a run's final `player_folder/`, or any `library_versions/vNNN/player_folder`. Omit for the baseline |
-| `turns`, `tokens` | the benchmark's | override the benchmark's turns and output tokens per game |
+| `out` | required | Output directory |
+| `benchmark` | required | Benchmark ID: (`ps_t20`, `ps_t30`, `ps_narrow`, `arcagi3`, `mazebench`) |
+| `model` | `claude-opus-5` | Model ID |
+| `artifacts` | none | A `player_folder` to give the player. Omit for the baseline |
+| `turns`, `tokens` | the benchmark's | Override the benchmark's default turn and token budgets per game |
 
 ## Examples
 
@@ -125,19 +125,6 @@ An evaluation:
     report.json           win rate (and SPL, for mazebench)
     plays.jsonl, plays/   every game played: score and transcript
     logs/                 every player session's raw events
-
-## Layout
-
-    train.py, eval.py     entrypoints
-    selforg/config.py     options and fixed settings
-    selforg/prompts.py    every prompt the teacher and player see
-    selforg/teacher.py    a training run
-    selforg/gameplay.py   the teacher's Gameplay tool
-    selforg/player.py     one player playing one game
-    selforg/harness.py    agent sessions in Singularity or Docker containers
-    selforg/games/        PuzzleScript, Python, ARC-AGI-3 and MazeBench games
-    data/                 game-writing references for the teacher, context descriptions, benchmarks
-
 
 <a name="bibtex"></a>
 ## Citation
