@@ -1,0 +1,95 @@
+Execution Order
+
+Zoom Level 1
+Zoom Level 2
+Zoom Level 3
+StartLoop/EndLoop
+
+    Let's start with the vaguest picture, and zoom in a bit each section for a more detailed description, and in the end describe a final looping construct that you may find yourself needing at some point.
+    
+Zoom Level 1
+
+    According to Rules 101, a turn is like this:
+    
+
+The player is marked as being someone who wants to move
+Each of your rules is applied as often as it can be, before moving to the next.
+Movement happens.
+An optional extra stage for rules you want to apply at the very end.
+
+Zoom Level 2
+
+    Let's look at step 2.  What does it mean? 
+    
+    Say we have the following:
+    
+[ > Crate | Crate ] -> [ > Crate | > Crate ]
+[ > Player | Crate ] -> [ > Player | > Crate ]
+
+    The player won't be able to push several crates in a row with this, because the first rule gets applied first, and then the second rule after that.  So order does matter - these aren't abstract replacement rules floating around in a vacuum.
+    
+Zoom Level 3
+
+    Each rule gets applied in turn as often as it can be before the interpreter moves on to the next one.  It sounds quite simple, doesn't it, but there's one point of ambiguity.  The compiler often compiles single rules you write down into several simpler rules (You can see the output by using the DEBUG switch in the Prelude).
+    
+    For instance
+    
+[ > Player | Crate ] -> [ > Player | > Crate ]
+
+    is compiled into these four instructions:
+    Rule Assembly : (4 rules)
+===========
+  (81) DOWN [ crate | up player ] -> [ up crate | up player ]
++ (81) DOWN [ down player | crate ] -> [ down player | down crate ]
++ (81) RIGHT [ crate | left player ] -> [ left crate | left player ]
++ (81) RIGHT [ right player | crate ] -> [ right player | right crate ]
+===========
+
+    So the question is: When I say that each rule is executed in turn to exhaustion, do I mean the few rules you write, or the many rules the interpreter ends up with?
+    
+    The answer is "the former".  The compiler generates lots of rules, but packs them together into rule groups.  The interpreter then, instead of applying one rule as much as it can before moving to the next, loops through each rule group as often as it can (still for each individual rule running it as often as it can), before moving to the next.  
+    
+    You might wonder if you can construct rule groups yourself.  The answer is yes, with use of the modest + symbol..
+    
+[ > Player | Crate ] -> [ > Player | > Crate ]
++ [ < Player | Crate ] -> [ < Player | < Crate ] 
+
+    That assigns both rules (or rather, the rules that are generated from them) to the same rule group.
+    
+    This technique is used  in the extended rigid bodies section (warning: it's a bit of an arcane subject).
+    
+StartLoop/EndLoop
+
+    Having rule-groups is nice, and they should be your first port of call for loop-constructions.  But there are reasons why you might want to nest loops, to have groups of rule groups iterating themselves in a loop to exhaustion.
+    
+      Thankfully you can realize this, at least to a depth of two, using the STARTLOOP/ENDLOOP keywords. Let's take the standard sokoban example:
+    
+[ > Player | Crate ] -> [ > Player | > Crate ]
+
+    This gets compiled to something like the following rule-group:
+    
+DOWN [ crate | up player ] -> [ up crate | up player ] 
++ DOWN [ down player | crate ] -> [ down player | down crate ]
++ RIGHT [ crate | left player ] -> [ left crate | left player ] 
++ RIGHT [ right player | crate ] -> [ right player | right crate ]
+
+      The alternative STARTLOOP/ENDLOOP form of this rule-group is the following:
+    
+STARTLOOP
+DOWN [ crate | up player ] -> [ up crate | up player ]
+DOWN [ down player | crate ] -> [ down player | down crate ]
+RIGHT [ crate | left player ] -> [ left crate | left player ]
+RIGHT [ right player | crate ] -> [ right player | right crate ]
+ENDLOOP
+
+  So, what does this do? This is in this case exactly the same as the rule-group.  It iterates each rule separately, and once it reaches ENDLOOP, if any rule changed any movement or object during the run it jumps back to the STARTLOOP line (even if changes were subsequently reverted later in the loop).  It can only leave when it reaches ENDLOOP without any rule since STARTLOOP having modified any object or movement.
+
+  And that's also how it works if there are bigger rule groups.  So basically it's just another way to write loops where rule-groups can be nested inside (See the rigidbody description for (slightly complicated) examples of use).  
+
+  Things to note:
+
+You can't nest multiple STARTLOOP/ENDLOOP loops inside eachother.
+You can't put STARTLOOP/ENDLOOP loops inside a rule-group. They are strictly on the outer level.
+To be clear: if any rule in any rule-group within a STARTLOOP/ENDLOOP block makes any changes to objects/movements, the loop will repeat.
+
+  And that's it.  It's actually a pretty simple/chill construct that does more or less what it says on the tin.  I'd still recommend rule-groups as a first port-of-call, but these are here if you need them. :)

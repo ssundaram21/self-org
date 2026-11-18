@@ -1,0 +1,16 @@
+The Action Button
+
+You want the player to respond to pressing action (X or SPACEBAR)?  It's super easy.
+
+ Edit[ Action Player | Sheep ] -> [  Action  Player | > Sheep  ]
+[ > Sheep |  Sheep ] -> [ blood | > Sheep ]
+
+You must feel so powerful now that you know how to ACTION.  
+
+It's treated like a directional input, merely one that has no effect during the movement phase and is removed (so if you search for a moving player, it will detect someone doing an action.  If you want to detect someone moving who is not doing an action, you can use the word ORTHOGONAL (which just means up/down/left/right).
+
+Action markers are discarded during the movement phase.  
+
+TIP: If you are using action in your games, you often will want to use norepeat_action to prevent the player from repeatedly triggering the action even just by holding down action (this is especially useful when action toggles between two states - when toggling a button, say, you will probably want "one press" = "one toggle").
+
+So, what are you going to use the action button for?  For pushing crates?  For swapping between characters? for pressing buttons?  There are many possibilities!

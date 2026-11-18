@@ -1,0 +1,13 @@
+Input
+
+When you press the arrow keys or action, this input is sent to the main player.  
+
+Sometimes you will want to have several player entities on screen at once.  Don't worry, input gets sent to all of them :)
+
+Sometimes you will want several different types of objects to be able to receive input.  Let's call them Player1,Player2, Player3.  You can define player as follows in the legend section
+
+Player = Player1 or Player2 or Player3
+
+and then three of those entity types will receive input from the player.
+
+See kettle for an example of sending many inputs to many entities simultaneously.

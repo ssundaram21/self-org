@@ -1,0 +1,521 @@
+Bird's-eye view of a PuzzleScript file
+
+A puzzlescript file is divided into 8 sections:
+
+Prelude
+Objects
+Legend
+Sounds
+CollisionLayers
+Rules
+WinConditions
+Levels
+
+Prelude
+
+      Before any of the "official" sections are declared, you can give details about your project in this section, and also set some editor options.
+      
+title 2D Whale World
+author increpare
+homepage www.increpare.com
+
+require_player_movement
+key_repeat_interval 0.12
+
+Here are the possible options:
+		
+
+author increpare
+Your name goes here.  This will appear in the title screen of the game.
+color_palette mastersystem
+By default, when you use colour names, they are pulled from a variation of Arne's 16-Colour palette.  However, there are other palettes to choose from:
+			
+
+1 - mastersystem 
+2 - gameboycolour 
+3 - amiga 
+4 - arnecolors 
+5 - famicom  
+6 - atari 
+7 - pastel  
+8 - ega 
+9 - amstrad 
+10 - proteus_mellow 
+11 - proteus_rich 
+12 - proteus_night 
+13 - c64 
+14 - whitingjp 
+
+(you can also refer to them by their numerical index)
+			
+again_interval 0.1
+The amount of time it takes an 'again' event to trigger.
+background_color blue
+Can accept a color name or hex code (in the form #412bbc). Controls the background color of title/message screens, as well as the background color of the website.  Text_color is its sibling.
+debug
+This outputs the compiled instructions whenever you build your file.  For instance, the line
+			
+ Edit[ > Player | Crate ] -> [ > Player | > Crate ]
+
+			is compiled into four instructions, as the output from debug shows when you hit 'RUN':
+			===========
+Rule Assembly : (4 rules)
+===========
+  (83) DOWN [ crate | up player ] -> [ up crate | up player ]
++ (83) DOWN [ down player | crate ] -> [ down player | down crate ]
++ (83) RIGHT [ crate | left player ] -> [ left crate | left player ]
++ (83) RIGHT [ right player | crate ] -> [ right player | right crate ]
+===========
+			Going from left to right:
+      
+
+          The number near the left is the line-number the rule came from in the original source code.  You can click on the number to jump to that line in the file.
+        
+
+          A plus-sign on the left of the line indicates that the rule is grouped with the previous one as part of a rule-group and the engine will loop through the group as a whole trying to apply the rules until no more rules in the group can be applied (See the rules page for more info).
+        
+
+        The compiler does a lot of stuff to the rules you give to it to 'simplify' them in various ways.  One thing it does for instance is replace all relative directions ( ^, v, <, and >), with UP, DOWN, LEFT, and RIGHT, which often involves splitting a single rule into many more rules (as above). An other thing you'll notice is that the core engine has rules only going DOWN and  RIGHT - rules in other directions are flipped.  For more information about directions in puzzlescript, see this page.
+      
+			
+flickscreen WxH
+
+				Setting flickscreen divides each level into WxH grids, and zooms the camera in so that the player can only see one at a time - the camera does not follow the player around on a move-to-move basis, but if the player moves from one part of this grid to another, the camera flicks to the new position.  See Legend of Zokoban for a cute example.
+			
+homepage www.mypage.com
+
+			The homepage of the author.  This doesn't appear directly in the game itself, but is included in the shared game and exported HTML build.
+			
+key_repeat_interval 0.1
+
+			When you hold down a key, how long is the delay between repeated presses getting sent to the game (in seconds)?  The default value is 1.5.
+			
+noaction
+Changes the action key (X) instruction from the title screen, and does not respond when the player pressed it (outside of menus and cutscenes and the like).
+norepeat_action
+For many games, you don't want holding action down to retrigger it - games where you're toggling a switch, say.  For these games, set norepeat_action, and the action button will only respond to individual presses.
+noundo
+Disables the undo key (Z) (I generally advise against disabling undo, FWIW).
+norestart
+Disables the restart key (R)
+realtime_interval
+The number indicates how long each realtime frame should be.  In the above case, twice a second the game engine will tick, but with no input.  Player input is processed as regular. See this documentation for more info on making realtime games.
+require_player_movement
+
+			This is a common requirement in games - if the player doesn't move, cancel the whole move.  This is equivalent, where there's only one player character, to the following:
+			[ Player ]->[ Player Temp ]
+late [ Player Temp ] -> CANCEL
+late [ Temp ] -> [ ]
+
+run_rules_on_level_start
+
+			For some games you will want, before the player sees the level, for the rules to be applied once.  (Games that have rules that generate level graphics on the fly, for instance, may want this.  Try out this game with and without the prelude option and compare results.)
+			
+scanline
+Applies a scanline visual effect - only draws every other line
+text_color blue
+Can accept a color name or hex code (in the form #412bbc). Controls the font color of title/message screens, as well as the font color in the website. Background_color is its sibling.
+title My Amazing Puzzle Game
+The name of your game.  Appears on the title screen.
+throttle_movement
+For use in conjunction with realtime_interval - this stops you from moving crazy fast - repeated keypresses of the same movement direction will not increase your speed. This doesn't apply to the action button.  If you can think of an example that requires action be throttled, just let me know and I'll try accommodate you.
+verbose_logging
+As you play the game, spits out information about all rules applied as you play, and also allows visual inspection of what exactly the rules do with the visual debugger.
+zoomscreen WxH
+Zooms the camera in to a WxH section of the map around the player, centered on the player.  Silly example.
+
+Objects
+    Here's where your in-game objects are all declared.  The simplest way is to give something a name and a color:
+    
+Player
+Blue
+    If you do this, the player will be a blue square. 
+    
+    You can specify a sprite as a 5x5 grid as follows:
+    
+Player 
+PINK YELLOW BLACK    
+.222.
+.000.
+22122
+.222.
+.2.2.
+
+	Which gives you this wee fella:
+	
+
+    The dots represent transparency, and the numbers 0..9 index the colours in the second line.
+    
+    I'm getting slightly ahead of myself here, but I should mention the following convenience: instead of doing it in the legend section, you can specify a character that you can use to refer to the object when level editing just by putting it after its real name:
+    
+Player P
+PINK WHITE BLACK    
+.222.
+.000.
+22122
+.222.
+.2.2.
+
+	The available colour names are:
+	
+blackwhitelightgray/greygray/greydarkgray/greyreddarkredlightredbrowndarkbrownlightbrownorangeyellowgreendarkgreenlightgreenbluelightbluedarkbluepurplepinktransparent
+
+	You can use hex-codes instead of these names, if you prefer:
+    Player 
+#FF5555 #FFFFFF #000000    
+.222.
+.000.
+22122
+.222.
+.2.2.
+
+Legend
+    This section has two purposes.  Firstly, it's a place where you can set up single-character names for things so that you can type them in levels:
+    
+P = Player
+. = Background
+# = Wall
+* = Crate
+O = Target
+@ = Crate and Target
+
+	There is another purpose, and this is to define properties of objects that you can refer to in rules and elsewhere:
+	
+Flying = Bat or Bird
+Obstacle = Wall or Lava or Water
+
+Sounds
+
+Here's where you hook up sounds to in-game actions.
+
+There are sound buttons above the console, that produce sound seeds that you can use in this section.
+
+These numbers are saved representations of the sounds, and you use them in the sound sections.
+
+A sound section could look like the following:
+
+    Player Move Up 142315
+    Player Move Down 142313
+    Player Move Right 142311
+    Crate Move 412312
+    Player CantMove Up 41234
+    Crate CantMove 41234
+    Crate Create 41234123
+    CloseMessage 1241234
+    Sfx0 213424
+    Sfx3 213424
+
+here are the possible sound events declarations
+
+Cancel 123413
+
+Played when the a rule triggers the CANCEL command.
+
+Crate Action 123414
+
+Triggers when a crate is subject to the 'action' during a movement phase.
+
+Crate Create 123414
+
+Triggers when a crate is created.
+
+EndGame 123413
+
+When you finish the game, and end up back at the title screen.
+
+EndLevel 123413
+
+When you finish a level.
+
+Player CantMove 4123412
+
+Triggers when that object unsuccessfully moves, in any direction.
+
+Player CantMove Down Left 4123412
+
+Triggers when that object unsuccessfully moves, either down or left.
+
+CloseMessage 123434
+
+makes a sound when the player closes a message window
+
+Crate Destroy 123414
+
+Triggers when a crate is destroyed.
+
+Player Move 4123412
+
+Triggers when that object successfully moves, in any direction.
+
+Player Move Down Left 4123412
+
+Triggers when that object successfully moves either down or left.
+
+Player Move Horizontal 4123412
+
+Triggers when that object successfully moves horizontally. Vertical is also valid here.
+
+Restart 123413
+
+Played when the player presses the restart button (R).
+
+SFX0 123434
+
+Can be anything form SFX0 to SFX10. These are custom sound events that can be triggered from rules.
+
+ShowMessage 123434
+
+makes a sound when a message appears
+
+StartGame 123413
+
+When you start a new game from the title screen.
+
+Startlevel 123413
+
+Played at the start of each level.
+
+TitleScreen 123414
+
+Triggers when the title-screen is loaded.
+
+Undo 123413
+
+Played when the player presses the undo button (Z).
+
+move and cantmove can be supplied with directions, so that certain sounds play if you move in particular directions.
+
+CollisionLayers
+
+    Objects can be placed on different layers:
+    
+Background
+Target
+Player, Wall, Crate
+
+The main purpose of layers is in resolving movements: two objects on the same layer cannot coexist in a single cell.  The order of layers also determines in what order things are drawn.
+
+The Background layer is a special layer.  Every game must have one.  Every tile must have a background tile.  However, by defining 
+Background = Background1 or Background2
+in the legend, you can have several tile types on the background layer. Every tile must have a background tile. If you don't specify one explicitly for a tile, it is inferred based on what other background tiles are used in the level it's in.
+
+Rules
+    See Rules 101 for an introduction to rules. 
+   	
+   	Rules are about pattern replacement.  There's a left side, and a right side, the engine looks for occurrences of the left side, possibly in many different orientations, and when it finds one, it replaces the contents with what's on the right.
+   	
+   	Let's look at the standard sokoban example more closely:
+   	
+[ > Player | Crate ] -> [ > Player | > Crate ]
+
+Left-hand Side
+
+   	The left-hand side specifies what the rule looks for.  It's looking for two cells, side by side, one having a player, and one having a crate.  There's an arrow next to the player, and it's pointing at the crate - that means that we are looking for a player that's trying to move towards the crate (Directional arrows are relative - if you want absolute directions, for gravity, for instance you can use absolute directions such as UP, DOWN, LEFT, and RIGHT).
+   	
+   	There is no arrow next to crate, this means that the pattern doesn't care whether or not its moving.  If one wanted to specifically search for crates that were not moving, one would type 
+   	
+[ > Player | STATIONARY Crate ] -> [ > Player | > Crate ]
+
+  If you want to search if two things overlap, just mention them side by side
+  
+[ Player Spikes ] -> [ DeadPlayer Spikes ]
+
+	If one wanted to match any player movements, not just movements towards the crate, one could replace the arrow with the MOVING keyword.
+   	
+[ MOVING Player | STATIONARY Crate ] -> [ MOVING Player | MOVING Crate ]
+
+	Note that the compiler can infer that the crate should be made to move in the same direction to how the player is moving.
+	
+	What if you want to search for somewhere there isn't a crate?  You can use the NO keyword.
+   	
+[ < Player | No Crate ] -> [ < Player | Crate ] (leave a trail of crates behind you)
+
+	It's possible for a rule to search for several disconnected bits.  For instance, you could have a bird that vanishes whenever the cat tries to jump up:
+	   	
+[ UP Cat ]  [ Bird ] -> [ UP Cat ] [ ]
+
+	It's possible to restrict rules to only operating in particular directions - for instance, the following removes anything that steps on lava:
+	
+DOWN [ Mortal | Lava ]  -> [ Corpse | Lava ]
+
+	The direction DOWN indicates what direction the pattern will be oriented.
+	
+	One can also have ellipses in patterns, that allow for them to be variable length.  Here's a lava gun that turns anyone in line with it into a Corpse:
+	
+ late [ LavaGun | ... | Mortal ] -> [ LavaGun | ... | Corpse ]
+
+  If the compiler was dumb, it would decompile this into something like
+  
+(92) late [ LavaGun | Mortal ] -> [ LavaGun | Corpse ]
+(92) late [ LavaGun | | Mortal ] -> [ LavaGun | | Corpse ]
+(92) late [ LavaGun | | | Mortal ] -> [ LavaGun | | | Corpse ]
+(92) late [ LavaGun | | | | Mortal ] -> [ LavaGun | | | | Corpse ]
+(92) ... etc.
+
+  and never finish compiling.
+  
+	A technical point that might occasionally be relevant : ellipsis-based rules search from smallest to biggest.  
+	
+		Also, it's possible to use two ellipses in a single pattern, such as stiff like this.
+		(92) [ > Player | ... | Crate | ... | Crate ] -> [ > Player | ... | > Crate | ... | Crate ]
+		
+
+			(Please be a little bit careful with using multiple ellipses in a single rule - it might get a bit slow).
+			
+Right-hand Side
+	If we had the following rule
+   	
+[ > Player | > Crate ] -> [ > Player | Crate ]
+
+   	it would tell us to remove the movement from crate.  However, the following one would not change anything:
+   	
+[ > Player | Crate ] -> [ > Player | Crate ]
+
+   	the rule is - the only things that are removed are things that are referred to., that goes for both movements and objects.
+   	
+   	If you want to specify that an object of a particular type be removed, without referring to it on the left-hand side, you can use the NO key word:
+     
+[ > Player |  ] -> [ > Player | NO Wall ]
+
+Commands
+
+   	Sometimes you want other things to happen than to just replace tiles with tiles.  That's what commands are for. 
+   	
+   	You can install a checkpoint, so that when people hit reset, they're taken back to this point, rather than the start of the level:
+   	
+late [ Player SavePoint ] -> CHECKPOINT
+
+   	In several games, it's important that if the player can't move, nothing else can happen either - so that you can't make time tick forward by repeatedly walking into walls.  There's a prelude setting for this, require_player_movement, but you can also simulate it as follows
+   	[ Player ] -> [ Player Shadow ]
+late [ Player Shadow ] -> CANCEL
+late [ Shadow ] -> [ ]
+
+	At the start of the turn, you put a counter on the square the player's in, and if they're still together after the movement phase, then cancel the whole move.
+	
+	You can combine several commands together, so you could say
+	
+late [ Player Shadow ] -> CHECKPOINT SFX3
+
+	If you wanted to play a sound effect as well.
+	
+	You can combine commands with regular rules, if you want:
+   	
+ [ > Player | Person ] -> [ < Player | Person ] message Woah, buddy, back off!
+   	   	
+   	Here're all the available commands:
+   	
+
+again
+means that there'll be a small pause after this turn, after which another turn will be fired off, with no player input - a way of doing non-interactive animations and other fun things :) .  You can control the time between frames with the 'again_interval' prelude switch. 
+      
+ Editrandom [ no Sheep ] -> [ Sheep ] again
+
+      Again is a moderately intelligent command - it only triggers if changes happen - so it won't loop infinitely if it's doing nothing.
+cancel
+cancels the entire turn, and reverts back to how it was at the start of the turn. basically "forget everything and pretend nothing happened"
+checkpoint
+saves the game state.  Now, whenever the person presses R to restart, or your do the RESTART command, they'll spawn here instead.
+restart
+Same as pressing R
+Win
+Wins the level!
+Message
+Gives the player a message.  So you can say things like "Message Hello World".  Reads everything to its right, so it has to be the rightmost argument.
+sfx0 ... sfx10
+Sound effects banks - you associate these to sounds in the sounds section, and then you can trigger them in rules by mentioning them.
+
+What stuff is hard to do?
+
+Loops
+
+	Wait actually loops are pretty easy.  Check out the execution order docs for more information (specifically about rule-groups and the StartLoop/EndLoop construction).
+	
+Counting
+
+   	If you had a rule that said "if there are two walls next to the player, destroy it", that would be tough.  You can do it with tricks, like putting temporary counters down as markers, but it's not hooked up that way.
+   	
+Diagonal Directions
+
+   	If you can think of an interesting use for diagonal directions, just let me know and I'll try add it back in.
+   	
+Extended Movements
+   	Movements that play out over many turns.  You can't attach variables to states - all movements are cleared out at the end of turns.  You end up having to have a different object for each frame, and it gets messy.  Having an platform character that jumps into 4 tiles into the air, I haven't figured out how to do in an elegant way.  But there might be a way.
+   	
+Real-time behaviours
+
+	Just because you can, it doesn't mean that you should, but if you want to do something realtime have a look here.
+	
+Extended Rigid Bodies
+
+   	It's definitely possible, just experimental.  See this document.
+   	
+Randomness
+
+   	Definitely possible, just a bit half-baked.  See this document.
+
+WinConditions
+
+    Here are the possible formats of win conditions:
+    
+(Neko Puzzle - you win if there's no fruit left)
+No Fruit
+
+(Sokoban - you win if every target point has a crate on it)
+All Target On Crate 
+
+(You win if Love exists somewhere)
+Some Love 
+
+(You win if there's some gold in the chest)
+Some Gold on Chest 
+
+(you win if all gold has been taken from the chest)
+No Gold on Chest
+
+If you have multiple win conditions, they all have to be satisfied.
+
+These should do for most games, but if you want more advanced control over winning and losing, then you can specify your own win rules using commands.
+
+Levels
+
+    Here's where all the fun happens!  A level section of a file looks something like this:
+    
+=======
+LEVELS
+=======
+
+#########
+#.......#
+#.*.*.O.#
+#..*..O.#
+#.P.*.*.#
+#.......#
+#########
+
+MESSAGE Woah, that was tough, eh?!
+
+#########
+#.....@.#
+#.P.*.O.#
+#.......#
+#########
+
+#########
+#.....@.#
+#.P.*.O.#     
+#.......#
+#########
+
+MESSAGE Thank you for playing the game.
+
+Levels are separated by blank lines, and you can also display messages if you want to.  If you want to have several objects occupying  single tile, you can specify this in the legend using and:
+
+@ = Crate and Target
+
+If you hold CTRL (or, on a Mac, CMD) and left click on the level in the text editor, it will load it in game.
+
+What stuff is hard to do?
+
+Branching.  I have no support for it in terms of this level structure.  If you want a continuous open world where you don't see everything all the time you can set zoomscreen or flickscreen in the prelude.
+
+If you can think of an elegant way to implement level branching in the engine, let me know, and I'll consider it : )

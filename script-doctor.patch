@@ -1,0 +1,14 @@
+diff --git a/puzzlescript_nodejs/puzzlescript/engine.js b/puzzlescript_nodejs/puzzlescript/engine.js
+index db0db52..2727e5a 100644
+--- a/puzzlescript_nodejs/puzzlescript/engine.js
++++ b/puzzlescript_nodejs/puzzlescript/engine.js
+@@ -408,6 +408,9 @@ globalThis.__PS_NODE_API__ = {
+     DoRestart,
+     getWinning: () => winning,
+     setWinning: (value) => { winning = value; },
++    getErrors: () => ({ count: errorCount, strings: errorStrings.slice() }),
++    setSuppressMessageScreens: (value) => { suppressMessageScreens = value; },
++    takeMessage: () => { const m = messagetext; messagetext = ""; return m; },
+     getLevel: () => level,
+     getState: () => state,
+     getRestarting: () => restarting,

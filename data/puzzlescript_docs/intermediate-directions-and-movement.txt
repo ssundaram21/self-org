@@ -1,0 +1,56 @@
+Intermediate Directions and Movement
+
+Relative directions rotate along with their pattern
+
+[ > Player | Crate ] -> [ > Player | > Crate ]
+
+gets compiled to the following set of rules:
+
+UP [ UP player | crate ] -> [ UP player | UP crate ] 
+DOWN [ DOWN player | crate ] -> [ DOWN player | DOWN crate ] 
+LEFT [ LEFT player | crate ] -> [ LEFT player | LEFT crate ] 
+RIGHT [ RIGHT player | crate ] -> [ RIGHT player | RIGHT crate ]
+
+You can restrict patterns so that they're only matched in a particular direction (by default, when the interpreter tries to find places to apply to rule, it tries all four rotations of it).  To implement gravity, we could do 
+
+DOWN [ stationary Object ] -> [ > Object ]
+
+Which compiles to
+
+DOWN [ stationary Object ] -> [ DOWN Object ]
+
+It would probably have been simpler to write the rule as 
+
+[ stationary Object ] -> [ DOWN Object ]
+
+which is the same thing.
+
+Another good illustration of why rule direction might be important would be if you're making a word game.
+
+[ C | A | T ] -> WIN
+
+would look for words in all four directions, so TAC would also match this rule. To fix it, you would restrict the rule to read left-to-right as follows:
+
+ Editright [ C | A | T ] -> WIN
+
+Huzzah!
+
+There are horizontal directons as well - if you want something that moves horizontally when you move horizontally, but ignores you otherwise, you do this
+
+[ Horizontal  Player ] [ Crate ] -> [  Horizontal  Player ] [  Horizontal Crate  ]
+and get this:
+
+(Vertical is also a keyword that you can use).
+
+Vertical and horizontal are both keywords, but is there a way of reducing the following to a single instruction?
+
+[ ^ Player | Crate ] -> [ ^ Player | ^ Crate ]
+[ v Player | Crate ] -> [ v Player | v Crate ]
+
+There is, and it's this:
+
+[ Perpendicular Player | Crate ] -> [ Perpendicular Player | Perpendicular Crate ]
+
+Parallel is also a keyword, and means what you think it might :)
+
+Tip: if you don't know what something does in the examples (or in your own code :S ), it can be helpful to add the DEBUG flag to the prelude to see how the compiler interprets it.
