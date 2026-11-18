@@ -52,6 +52,9 @@
 .tl-think { background: var(--band); border-radius: 12px; padding: .6rem .8rem; margin-bottom: .55rem;
             font-family: 'IBM Plex Mono', monospace; font-size: .8rem; line-height: 1.5; white-space: pre-wrap; }
 .tl-think > div { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.tl-sys { border: 1px solid #e5e7eb; border-radius: 12px; padding: .6rem .8rem; margin-bottom: .55rem;
+          font-family: 'IBM Plex Mono', monospace; font-size: .8rem; line-height: 1.5; }
+.tl-sys > div { margin-top: .45rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 .tl-think.more { cursor: pointer; }
 .tl-think.more::after { content: 'show more'; display: block; margin-top: .2rem; font-size: .72rem; color: var(--mute); }
 .tl-think.open > div { display: block; }

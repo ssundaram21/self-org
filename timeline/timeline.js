@@ -223,6 +223,11 @@
       <pre>${s.k === 'fail' ? '' : esc(s.text)}${s.out ? `<span class="o">${s.k === 'fail' ? '' : '\n\n→ '}${esc(s.out)}</span>` : ''}</pre></div>`;
   }
 
+  // What the teacher was told before its first turn.
+  function systemHTML(text) {
+    return `<div class="tl-sys"><span class="tl-tag gray">SYSTEM PROMPT</span><div>${esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</div></div>`;
+  }
+
   function actionHTML(it, j) {
     if (it.type === 'play') return `<div class="tl-act" data-j="${j}"><span class="tl-tag">PLAY</span><canvas data-r="${it.replay}"></canvas>
       <span class="g">${it.game}</span><span class="chip score ${it.score === 1 ? '' : 'loss'}">score ${Number(it.score).toFixed(1)}</span>
@@ -279,7 +284,7 @@
       <div class="tl-head"><button class="tl-nav" ${k ? '' : 'disabled'}>‹</button><div class="t">${title(g)}</div>
         <button class="tl-nav" ${k < groups.length - 1 ? '' : 'disabled'}>›</button></div>
       <div class="tl-body">
-        <div><div class="tl-label">Teacher</div><div class="tl-ctx">${g.ctx.map(stepHTML).join('')}${g.items.map(actionHTML).join('')}</div></div>
+        <div><div class="tl-label">Teacher</div><div class="tl-ctx">${k === 0 && D.system ? systemHTML(D.system) : ''}${g.ctx.map(stepHTML).join('')}${g.items.map(actionHTML).join('')}</div></div>
         <div class="tl-side"></div>
       </div>`;
     const [prev, next] = panel.querySelectorAll('.tl-nav');
