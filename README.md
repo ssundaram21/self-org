@@ -21,7 +21,6 @@ Requirements:
 - npm
 - Python >= 3.10
 - Singularity/Apptainer or Docker
-
     ./setup.sh          # game engines, the agent containers, pip requirements
     ./download.sh       # the benchmarks, into data/benchmarks/
 
