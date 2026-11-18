@@ -1,8 +1,6 @@
-# Self-organized self-improvement
+# Do LLM Agents Still Need to Be Told How to Self-Improve?
 
-A frozen LLM, the **teacher**, is given a budget, a prompt and a set of tools, and is left to
-improve the text context of a **player** (another instance of the same model) however it likes.
-We then measure how the optimized context transfers to held-out game benchmarks.
+**Tl;DR** We give a frozen LLM agent a general self-improvement goal, a budget, and basic tools for writing games and editing text. We don't give it a recipe or tell it how to compose those tools. We find that sufficiently capable LLM agents successfully compose their own self-improvement loops using human-recognizable learning strategies.
 
 ## Setup
 
