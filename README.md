@@ -1,4 +1,13 @@
-# Do LLM Agents Still Need to Be Told How to Self-Improve?
+<div align="center">
+<h1>Do LLM Agents Still Need to Be Told How to Self-Improve?</h1>
+
+#### [Project Page](https://ssundaram21.github.io/self-org/) | [Paper](https://arxiv.org/abs/2611.23219) | [Bibtex](#bibtex)
+
+[**Shobhita Sundaram**](https://ssundaram21.github.io/)<sup>1</sup>,  [**Cansu Sancaktar**](https://csancaktar.github.io/)<sup>2</sup>,  [**Phillip Isola**](https://web.mit.edu/phillipi/)<sup>1</sup>
+
+<sup>1</sup>MIT  <sup>2</sup> University of Tübingen
+
+</div>
 
 **Tl;DR** We give a frozen LLM agent a general self-improvement goal, a budget, and basic tools for writing games and editing text. We don't give it a recipe or tell it how to compose those tools. We find that sufficiently capable LLM agents successfully compose their own self-improvement loops using human-recognizable learning strategies.
 
@@ -134,3 +143,20 @@ An evaluation:
     selforg/harness.py    agent sessions in Singularity or Docker containers
     selforg/games/        PuzzleScript, Python, ARC-AGI-3 and MazeBench games
     data/                 game-writing references for the teacher, context descriptions, benchmarks
+
+
+<a name="bibtex"></a>
+## Citation
+
+If you find our work or any of our materials useful, please cite our paper:
+```
+@article{sundaram2026llmagentsneedtold,
+      title={Do LLM Agents Still Need to Be Told How to Self-Improve?}, 
+      author={Shobhita Sundaram and Cansu Sancaktar and Phillip Isola},
+      year={2026},
+      eprint={2611.23219},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2611.23219}, 
+}
+```
